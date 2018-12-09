@@ -60,9 +60,14 @@ public class GyFintech {
                 .write().csv("hdfs://10.0.1.95:9000/result/gy/UserMsgCount");
         //样本中（申请时间）往前推最晚（近）短信的时间减去申请时间（天数）分布
         HdfsUtil.deleteFile("/result/gy/lastDt");
-        sc.sql("select md5No,datediff(to_date(first(applicationDt)),to_date(max(submitTime))) from sampleInfo where content != '' group by md5No")
-//                .write().csv("hdfs://10.0.1.95:9000/result/gy/lastDt");
-                .show();
+        sc.sql("select md5No,datediff(to_date(max(submitTime)),to_date(first(applicationDt))) from sampleInfo where content != '' group by md5No")
+                .write().csv("hdfs://10.0.1.95:9000/result/gy/lastDt");
+
+        //样本中（申请时间）往前推最早（远）短信的时间减去申请时间（天数）分布
+        HdfsUtil.deleteFile("/result/gy/nearestDt");
+        sc.sql("select md5No,datediff(to_date(first(applicationDt)),to_date(min(submitTime))) from sampleInfo where content != '' group by md5No")
+                .write().csv("hdfs://10.0.1.95:9000/result/gy/nearestDt");
+
 //        Properties prop = new Properties();
 //        prop.setProperty("user","root");
 //        prop.setProperty("password","root");
