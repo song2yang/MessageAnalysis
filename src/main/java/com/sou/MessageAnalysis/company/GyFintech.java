@@ -26,16 +26,16 @@ public class GyFintech {
          * 3、样本中（申请时间）往前推最晚（近）短信的时间减去申请时间（天数）分布
          * 4、样本中（申请时间）往前推最早（远）短信的时间减去申请时间（天数）分布
          */
-
-        Dataset<Row> telDs = getTelRdd(jsc, sc, hdfsHost, sourcePath);
+        //样本原始文件 大额 CJM_1129_DE 小额 CJM_1129_XE
+        Dataset<Row> telDs = getTelRdd(jsc, sc, hdfsHost, sourcePath,"CJM_1129_DE.txt");
         telDs.registerTempTable("telPhone");
         //样本用户总数量
         Long sampleCount = telDs.count();
-
-        Dataset<Row> msgDs = getMsgRdd(jsc, sc, hdfsHost, sourcePath);
+        //样本对应短信 大额 DE 小额 XE
+        Dataset<Row> msgDs = getMsgRdd(jsc, sc, hdfsHost, sourcePath,"DE.csv");
         msgDs.registerTempTable("msg");
-
-        Dataset<Row> sampleDs = getSampleRdd(jsc, sc, hdfsHost, sourcePath);
+        //样本手机号码md5文件 大额 YB_DE 小额 YB_XE
+        Dataset<Row> sampleDs = getSampleRdd(jsc, sc, hdfsHost, sourcePath, "YB_DE.csv");
 //        sampleDs.show();
 
         Dataset<Row> sampleTelDs = sampleDs.join(telDs, sampleDs.col("mobile").equalTo(telDs.col("originalNo"))).distinct();
@@ -48,6 +48,7 @@ public class GyFintech {
         sampleTelMsgDs.show();
 
         Dataset<Row> msgSampleDs = sc.sql("select count(distinct md5No) from sampleInfo where content != ''");
+        msgSampleDs.show();
         //短信中样本覆盖数量
         Long sampleInMsgCount = msgSampleDs.count();
         //短信号码（样本）在短信中的覆盖率
@@ -56,7 +57,7 @@ public class GyFintech {
         HdfsUtil.deleteFile("/result/gy/UserMsgCount");
 //        msgSampleDs.show();
         //样本中号码的短信数量分布
-        sc.sql("select md5No,count(*) from sampleInfo where content != '' GROUP BY md5No")
+        sc.sql("select md5No,count(*) from sampleInfo GROUP BY md5No")
                 .write().csv("hdfs://10.0.1.95:9000/result/gy/UserMsgCount");
         //样本中（申请时间）往前推最晚（近）短信的时间减去申请时间（天数）分布
         HdfsUtil.deleteFile("/result/gy/lastDt");
@@ -84,8 +85,8 @@ public class GyFintech {
 
 
     }
-    protected static  Dataset<Row>  getTelRdd(JavaSparkContext jsc, SQLContext sc,String hdfsHost, String sourcePath){
-        JavaRDD<String> lines = jsc.textFile(hdfsHost+sourcePath +"CJM_1129_DE.txt");
+    protected static  Dataset<Row>  getTelRdd(JavaSparkContext jsc, SQLContext sc,String hdfsHost, String sourcePath,String fileName){
+        JavaRDD<String> lines = jsc.textFile(hdfsHost+sourcePath+fileName);
 
         JavaRDD<Object> telRdd = lines.map(new Function<String, Object>() {
             @Override
@@ -104,8 +105,8 @@ public class GyFintech {
         return telDf;
     }
 
-    protected static Dataset<Row> getMsgRdd(JavaSparkContext jsc, SQLContext sc,String hdfsHost, String sourcePath){
-        JavaRDD<String> msgLines = jsc.textFile(hdfsHost+sourcePath +"test.csv");
+    protected static Dataset<Row> getMsgRdd(JavaSparkContext jsc, SQLContext sc,String hdfsHost, String sourcePath,String fileName){
+        JavaRDD<String> msgLines = jsc.textFile(hdfsHost+sourcePath+fileName);
 
         //读取原始短信
         JavaRDD<Object> msgRdd = msgLines.map(new Function<String, Object>() {
@@ -149,8 +150,8 @@ public class GyFintech {
         return msgDf;
     }
 
-    protected static void getMsgTagRdd(JavaSparkContext jsc,SQLContext sc,String hdfsHost,String sourcePath){
-        JavaRDD<String> msgTagLines = jsc.textFile(hdfsHost+sourcePath +"zz_test.csv");
+    protected static void getMsgTagRdd(JavaSparkContext jsc,SQLContext sc,String hdfsHost,String sourcePath,String fileName){
+        JavaRDD<String> msgTagLines = jsc.textFile(hdfsHost+sourcePath + "zz_test.csv");
 
         JavaRDD<Object> msgTagRdd = msgTagLines.map(new Function<String, Object>() {
             @Override
@@ -183,8 +184,8 @@ public class GyFintech {
         msgTagDf.show();
     }
 
-    private static Dataset<Row> getSampleRdd(JavaSparkContext jsc,SQLContext sc,String hdfsHost,String sourcePath){
-        JavaRDD<String> lines = jsc.textFile(hdfsHost+sourcePath +"YB_DE.csv");
+    private static Dataset<Row> getSampleRdd(JavaSparkContext jsc,SQLContext sc,String hdfsHost,String sourcePath,String fileName){
+        JavaRDD<String> lines = jsc.textFile(hdfsHost+sourcePath + fileName);
 
         JavaRDD<Object> sampleRdd = lines.map(new Function<String, Object>() {
             @Override
