@@ -26,13 +26,13 @@ public class GyFintech {
          * 3、样本中（申请时间）往前推最晚（近）短信的时间减去申请时间（天数）分布
          * 4、样本中（申请时间）往前推最早（远）短信的时间减去申请时间（天数）分布
          */
-
-        Dataset<Row> telDs = getTelRdd(jsc, sc, hdfsHost, sourcePath);
+        //大额 CJM_1129_DE 小额 CJM_1129_XE
+        Dataset<Row> telDs = getTelRdd(jsc, sc, hdfsHost, sourcePath,"CJM_1129_DE.txt");
         telDs.registerTempTable("telPhone");
         //样本用户总数量
         Long sampleCount = telDs.count();
-
-        Dataset<Row> msgDs = getMsgRdd(jsc, sc, hdfsHost, sourcePath);
+        //大额 DE 小额 XE
+        Dataset<Row> msgDs = getMsgRdd(jsc, sc, hdfsHost, sourcePath,"test.csv");
         msgDs.registerTempTable("msg");
 
         Dataset<Row> sampleDs = getSampleRdd(jsc, sc, hdfsHost, sourcePath);
@@ -47,7 +47,7 @@ public class GyFintech {
 
         sampleTelMsgDs.show();
 
-        Dataset<Row> msgSampleDs = sc.sql("select count(distinct md5No) from sampleInfo where content != ''");
+        Dataset<Row> msgSampleDs = sc.sql("select format_number(count(distinct md5No).divde("+sampleCount+").multiply(100),5) from sampleInfo where content != ''");
         //短信中样本覆盖数量
         Long sampleInMsgCount = msgSampleDs.count();
         //短信号码（样本）在短信中的覆盖率
@@ -84,8 +84,8 @@ public class GyFintech {
 
 
     }
-    protected static  Dataset<Row>  getTelRdd(JavaSparkContext jsc, SQLContext sc,String hdfsHost, String sourcePath){
-        JavaRDD<String> lines = jsc.textFile(hdfsHost+sourcePath +"CJM_1129_DE.txt");
+    protected static  Dataset<Row>  getTelRdd(JavaSparkContext jsc, SQLContext sc,String hdfsHost, String sourcePath,String fileName){
+        JavaRDD<String> lines = jsc.textFile(hdfsHost+sourcePath);
 
         JavaRDD<Object> telRdd = lines.map(new Function<String, Object>() {
             @Override
@@ -104,8 +104,8 @@ public class GyFintech {
         return telDf;
     }
 
-    protected static Dataset<Row> getMsgRdd(JavaSparkContext jsc, SQLContext sc,String hdfsHost, String sourcePath){
-        JavaRDD<String> msgLines = jsc.textFile(hdfsHost+sourcePath +"test.csv");
+    protected static Dataset<Row> getMsgRdd(JavaSparkContext jsc, SQLContext sc,String hdfsHost, String sourcePath,String fileName){
+        JavaRDD<String> msgLines = jsc.textFile(hdfsHost+sourcePath);
 
         //读取原始短信
         JavaRDD<Object> msgRdd = msgLines.map(new Function<String, Object>() {
