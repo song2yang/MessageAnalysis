@@ -30,7 +30,7 @@ public class App {
 
 //        sparkMaster = PropertiesUtil.getProperty("spark.master");
 //        sparkMaster = "spark://10.0.1.95:7077";
-        sparkMaster = "spark://10.0.1.95:7077";
+        sparkMaster = "local";
 //        hdfsHost = PropertiesUtil.getProperty("hdfs.host");
         hdfsHost = "hdfs://10.0.1.95:9000/";
 //        sourcePath = PropertiesUtil.getProperty("source.path");
