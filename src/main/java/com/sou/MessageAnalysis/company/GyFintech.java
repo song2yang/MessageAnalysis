@@ -14,6 +14,8 @@ import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SQLContext;
 import util.HdfsUtil;
 
+import java.text.SimpleDateFormat;
+
 public class GyFintech {
     private static Logger logger = Logger.getLogger(GyFintech.class);
 
@@ -38,6 +40,7 @@ public class GyFintech {
 
         Dataset<Row> sampleTelDs = sampleDs.join(telDs, sampleDs.col("mobile").equalTo(telDs.col("originalNo"))).distinct();
 //        sampleTelDs.show();
+//        sc.sql("select applicationDt,to_date(applicationDt) from sampleInfo").show();
 
         Dataset<Row> sampleTelMsgDs = sampleTelDs.join(msgDs, sampleTelDs.col("md5No").equalTo(msgDs.col("tel")), "left");
         sampleTelMsgDs.registerTempTable("sampleInfo");
@@ -57,8 +60,9 @@ public class GyFintech {
                 .write().csv("hdfs://10.0.1.95:9000/result/gy/UserMsgCount");
         //样本中（申请时间）往前推最晚（近）短信的时间减去申请时间（天数）分布
         HdfsUtil.deleteFile("/result/gy/lastDt");
-        sc.sql("select md5No,to_date(first(applicationDt)),to_date(max(submitTime)) from sampleInfo where content != '' group by md5No")
-                .write().csv("hdfs://10.0.1.95:9000/result/gy/lastDt");
+        sc.sql("select md5No,datediff(to_date(first(applicationDt)),to_date(max(submitTime))) from sampleInfo where content != '' group by md5No")
+//                .write().csv("hdfs://10.0.1.95:9000/result/gy/lastDt");
+                .show();
 //        Properties prop = new Properties();
 //        prop.setProperty("user","root");
 //        prop.setProperty("password","root");
@@ -183,8 +187,10 @@ public class GyFintech {
                 String[] sampleArr = line.split(",");
 
                 SampleInfo sample = new SampleInfo();
+                SimpleDateFormat sdf1 = new SimpleDateFormat("yyyy/MM/dd");
+                SimpleDateFormat sdf2 = new SimpleDateFormat("yyyy-MM-dd");
                 sample.setMobile(sampleArr[0]);
-                sample.setApplicationDt(sampleArr[1]);
+                sample.setApplicationDt(sdf2.format(sdf1.parse(sampleArr[1])));
                 sample.setOverdueDays(sampleArr[2]);
                 return sample;
             }
