@@ -17,6 +17,8 @@ import java.text.SimpleDateFormat;
 
 public class GyFintech {
 
+    private static final String fileType = "DE";
+
     public static void msgStatistics(JavaSparkContext jsc, SQLContext sc, String hdfsHost, String sourcePath,Logger logger){
         /**
          * 1、短信号码（样本）在短信中的覆盖率
@@ -25,51 +27,54 @@ public class GyFintech {
          * 4、样本中（申请时间）往前推最早（远）短信的时间减去申请时间（天数）分布
          */
         //样本原始文件 大额 CJM_1129_DE 小额 CJM_1129_XE
-        Dataset<Row> telDs = getTelRdd(jsc, sc, hdfsHost, sourcePath,"CJM_1129_DE.txt");
+        Dataset<Row> telDs = getTelRdd(jsc, sc, hdfsHost, sourcePath,"CJM_1129_"+fileType+".txt");
         telDs.registerTempTable("telPhone");
         //样本用户总数量
         Long sampleCount = telDs.count();
         //样本对应短信 大额 DE 小额 XE
-        Dataset<Row> msgDs = getMsgRdd(jsc, sc, hdfsHost, sourcePath,"DE.csv");
+        Dataset<Row> msgDs = getMsgRdd(jsc, sc, hdfsHost, sourcePath,fileType+".csv");
         msgDs.registerTempTable("msg");
         //样本手机号码md5文件 大额 YB_DE 小额 YB_XE
-        Dataset<Row> sampleDs = getSampleRdd(jsc, sc, hdfsHost, sourcePath, "YB_DE.csv");
+        Dataset<Row> sampleDs = getSampleRdd(jsc, sc, hdfsHost, sourcePath, "YB_"+fileType+".csv");
 //        sampleDs.show();
 
+        HdfsUtil.deleteFile("/result/"+fileType+"/样本+加密号码");
         Dataset<Row> sampleTelDs = sampleDs.join(telDs, sampleDs.col("mobile").equalTo(telDs.col("originalNo"))).distinct();
+        sampleDs.write().csv("hdfs://10.0.1.95:9000/result/"+fileType+"/样本+加密号码");
 //        sampleTelDs.show();
 //        sc.sql("select applicationDt,to_date(applicationDt) from sampleInfo").show();
 
+
+        HdfsUtil.deleteFile("/result/"+fileType+"/样本+加密号码+短信文件");
         Dataset<Row> sampleTelMsgDs = sampleTelDs.join(msgDs, sampleTelDs.col("md5No").equalTo(msgDs.col("tel")), "left");
+        sampleTelMsgDs.write().csv("hdfs://10.0.1.95:9000/result/"+fileType+"/样本+加密号码+短信文件");
         sampleTelMsgDs.registerTempTable("sampleInfo");
 
-        sampleTelMsgDs.show();
-
-        Dataset<Row> msgSampleDs = sc.sql("select count(distinct md5No) from sampleInfo where content != ''");
-        msgSampleDs.show();
-
+        HdfsUtil.deleteFile("/result/"+fileType+"/匹配短信用户");
+        Dataset<Row> msgSampleDs = sc.sql("select distinct(md5No) from sampleInfo where content != ''").distinct();
+        msgSampleDs.write().csv("hdfs://10.0.1.95:9000/result/"+fileType+"/匹配短信用户");
         //未匹配的手机号码
-        HdfsUtil.deleteFile("/result/gy/unmacthUser");
-        sc.sql("select distinct(md5No) from sampleInfo where content = ''")
-                .write().csv("/result/gy/unmacthUser");
+        HdfsUtil.deleteFile("/result/"+fileType+"/未匹配短信用户");
+        sc.sql("select distinct(md5No) from sampleInfo where content is null")
+                .write().csv("hdfs://10.0.1.95:9000/result/"+fileType+"/未匹配短信用户");
         //短信中样本覆盖数量
         Long sampleInMsgCount = msgSampleDs.count();
         //短信号码（样本）在短信中的覆盖率
         logger.error("短信号码（样本）在短信中的覆盖率:"+sampleInMsgCount+"/"+sampleCount+"="+sampleInMsgCount/sampleCount);
 
-        HdfsUtil.deleteFile("/result/gy/UserMsgCount");
+        HdfsUtil.deleteFile("/result/"+fileType+"/用户短信数量");
         //样本中号码的短信数量分布
         sc.sql("select distinct(md5No),count(*) from sampleInfo where content != '' GROUP BY md5No ")
-                .write().csv("hdfs://10.0.1.95:9000/result/gy/UserMsgCount");
+                .write().csv("hdfs://10.0.1.95:9000/result/DE/用户短信数量");
         //样本中（申请时间）往前推最晚（近）短信的时间减去申请时间（天数）分布
-        HdfsUtil.deleteFile("/result/gy/lastDt");
+        HdfsUtil.deleteFile("/result/"+fileType+"/最晚时间-申请时间");
         sc.sql("select md5No,datediff(to_date(max(submitTime)),to_date(first(applicationDt))) from sampleInfo where content != '' group by md5No")
-                .write().csv("hdfs://10.0.1.95:9000/result/gy/lastDt");
+                .write().csv("hdfs://10.0.1.95:9000/result/"+fileType+"/最近时间-申请时间");
 
         //样本中（申请时间）往前推最早（远）短信的时间减去申请时间（天数）分布
-        HdfsUtil.deleteFile("/result/gy/nearestDt");
+        HdfsUtil.deleteFile("/result/"+fileType+"/申请时间-最早时间");
         sc.sql("select md5No,datediff(to_date(first(applicationDt)),to_date(min(submitTime))) from sampleInfo where content != '' group by md5No")
-                .write().csv("hdfs://10.0.1.95:9000/result/gy/nearestDt");
+                .write().csv("hdfs://10.0.1.95:9000/result/"+fileType+"/申请时间-最早时间");
 
 
 //        Properties prop = new Properties();
@@ -199,7 +204,12 @@ public class GyFintech {
                 SimpleDateFormat sdf1 = new SimpleDateFormat("yyyy/MM/dd");
                 SimpleDateFormat sdf2 = new SimpleDateFormat("yyyy-MM-dd");
                 sample.setMobile(sampleArr[0]);
-                sample.setApplicationDt(sdf2.format(sdf1.parse(sampleArr[1])));
+                try{
+                    sample.setApplicationDt(sdf2.format(sdf1.parse(sampleArr[1])));
+                }catch (Exception e){
+                    sample.setApplicationDt("1960-01-01");
+                    e.printStackTrace();
+                }
                 sample.setOverdueDays(sampleArr[2]);
                 return sample;
             }
