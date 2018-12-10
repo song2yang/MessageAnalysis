@@ -1,6 +1,5 @@
 package com.sou.MessageAnalysis.company;
 
-import com.sou.MessageAnalysis.App;
 import com.sou.MessageAnalysis.bean.gy.Message;
 import com.sou.MessageAnalysis.bean.gy.MessageTag;
 import com.sou.MessageAnalysis.bean.gy.SampleInfo;
@@ -17,9 +16,8 @@ import util.HdfsUtil;
 import java.text.SimpleDateFormat;
 
 public class GyFintech {
-    private static Logger logger = Logger.getLogger(GyFintech.class);
 
-    public static void msgStatistics(JavaSparkContext jsc, SQLContext sc, String hdfsHost, String sourcePath){
+    public static void msgStatistics(JavaSparkContext jsc, SQLContext sc, String hdfsHost, String sourcePath,Logger logger){
         /**
          * 1、短信号码（样本）在短信中的覆盖率
          * 2、样本中号码的短信数量分布
@@ -68,6 +66,11 @@ public class GyFintech {
         HdfsUtil.deleteFile("/result/gy/nearestDt");
         sc.sql("select md5No,datediff(to_date(first(applicationDt)),to_date(min(submitTime))) from sampleInfo where content != '' group by md5No")
                 .write().csv("hdfs://10.0.1.95:9000/result/gy/nearestDt");
+
+
+        HdfsUtil.deleteFile("/result/gy/debuggerResult");
+        sc.sql("select distinct(md5No) from sampleInfo where content != '' group by md5No")
+                .write().csv("hdfs://10.0.1.95:9000/result/gy/debuggerResult");
 
 //        Properties prop = new Properties();
 //        prop.setProperty("user","root");

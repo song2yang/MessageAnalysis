@@ -30,7 +30,7 @@ public class App {
 
 //        sparkMaster = PropertiesUtil.getProperty("spark.master");
 //        sparkMaster = "spark://10.0.1.95:7077";
-        sparkMaster = "local";
+        sparkMaster = "spark://10.0.1.95:7077";
 //        hdfsHost = PropertiesUtil.getProperty("hdfs.host");
         hdfsHost = "hdfs://10.0.1.95:9000/";
 //        sourcePath = PropertiesUtil.getProperty("source.path");
@@ -47,7 +47,7 @@ public class App {
 
         SQLContext sc = new SQLContext(jsc);
 
-        GyFintech.msgStatistics(jsc,sc,hdfsHost,gySourcePath);
+        GyFintech.msgStatistics(jsc,sc,hdfsHost,gySourcePath,logger);
 //      掌众数据统计
 //      Weshare.statistics(jsc,sc,hdfsHost,sourcePath);
 
