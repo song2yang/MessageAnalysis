@@ -51,11 +51,12 @@ public class GyFintech {
         Long sampleInMsgCount = msgSampleDs.count();
         //短信号码（样本）在短信中的覆盖率
         logger.error("短信号码（样本）在短信中的覆盖率:"+sampleInMsgCount+"/"+sampleCount+"="+sampleInMsgCount/sampleCount);
+        System.out.println("短信号码（样本）在短信中的覆盖率:"+sampleInMsgCount+"/"+sampleCount+"="+sampleInMsgCount/sampleCount);
 
         HdfsUtil.deleteFile("/result/gy/UserMsgCount");
 //        msgSampleDs.show();
         //样本中号码的短信数量分布
-        sc.sql("select md5No,count(*) from sampleInfo GROUP BY md5No")
+        sc.sql("select distinct(md5No),count(*) from sampleInfo where content != '' GROUP BY md5No ")
                 .write().csv("hdfs://10.0.1.95:9000/result/gy/UserMsgCount");
         //样本中（申请时间）往前推最晚（近）短信的时间减去申请时间（天数）分布
         HdfsUtil.deleteFile("/result/gy/lastDt");
