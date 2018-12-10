@@ -47,14 +47,17 @@ public class GyFintech {
 
         Dataset<Row> msgSampleDs = sc.sql("select count(distinct md5No) from sampleInfo where content != ''");
         msgSampleDs.show();
+
+        //未匹配的手机号码
+        HdfsUtil.deleteFile("/result/gy/unmacthUser");
+        sc.sql("select distinct(md5No) from sampleInfo where content = ''")
+                .write().csv("/result/gy/unmacthUser");
         //短信中样本覆盖数量
         Long sampleInMsgCount = msgSampleDs.count();
         //短信号码（样本）在短信中的覆盖率
         logger.error("短信号码（样本）在短信中的覆盖率:"+sampleInMsgCount+"/"+sampleCount+"="+sampleInMsgCount/sampleCount);
-        System.out.println("短信号码（样本）在短信中的覆盖率:"+sampleInMsgCount+"/"+sampleCount+"="+sampleInMsgCount/sampleCount);
 
         HdfsUtil.deleteFile("/result/gy/UserMsgCount");
-//        msgSampleDs.show();
         //样本中号码的短信数量分布
         sc.sql("select distinct(md5No),count(*) from sampleInfo where content != '' GROUP BY md5No ")
                 .write().csv("hdfs://10.0.1.95:9000/result/gy/UserMsgCount");
@@ -68,10 +71,6 @@ public class GyFintech {
         sc.sql("select md5No,datediff(to_date(first(applicationDt)),to_date(min(submitTime))) from sampleInfo where content != '' group by md5No")
                 .write().csv("hdfs://10.0.1.95:9000/result/gy/nearestDt");
 
-
-        HdfsUtil.deleteFile("/result/gy/debuggerResult");
-        sc.sql("select distinct(md5No) from sampleInfo where content != '' group by md5No")
-                .write().csv("hdfs://10.0.1.95:9000/result/gy/debuggerResult");
 
 //        Properties prop = new Properties();
 //        prop.setProperty("user","root");
