@@ -17,7 +17,7 @@ import java.text.SimpleDateFormat;
 
 public class GyFintech {
 
-    private static final String fileType = "DE";
+    private static final String fileType = "XE";
 
     public static void msgStatistics(JavaSparkContext jsc, SQLContext sc, String hdfsHost, String sourcePath,Logger logger){
         /**
@@ -48,8 +48,10 @@ public class GyFintech {
         HdfsUtil.deleteFile("/result/"+fileType+"/样本+加密号码+短信文件");
         Dataset<Row> sampleTelMsgDs = sampleTelDs.join(msgDs, sampleTelDs.col("md5No").equalTo(msgDs.col("tel")), "left");
         sampleTelMsgDs.write().csv("hdfs://10.0.1.95:9000/result/"+fileType+"/样本+加密号码+短信文件");
-        sampleTelMsgDs.registerTempTable("sampleInfo");
+        sampleTelMsgDs.registerTempTable("totalSampleInfo");
 
+        Dataset<Row> sample2YearDs = sc.sql("select applicationDt,originalNo,overdueDays,md5No,content,submitTime from totalSampleInfo where content != '' and abs(datediff(to_date(submitTime),to_date(applicationDt))) <= 700");
+        sample2YearDs.registerTempTable("sampleInfo");
         HdfsUtil.deleteFile("/result/"+fileType+"/匹配短信用户");
         Dataset<Row> msgSampleDs = sc.sql("select distinct(md5No) from sampleInfo where content != ''").distinct();
         msgSampleDs.write().csv("hdfs://10.0.1.95:9000/result/"+fileType+"/匹配短信用户");
@@ -65,7 +67,7 @@ public class GyFintech {
         HdfsUtil.deleteFile("/result/"+fileType+"/用户短信数量");
         //样本中号码的短信数量分布
         sc.sql("select distinct(md5No),count(*) from sampleInfo where content != '' GROUP BY md5No ")
-                .write().csv("hdfs://10.0.1.95:9000/result/DE/用户短信数量");
+                .write().csv("hdfs://10.0.1.95:9000/result/"+fileType+"/用户短信数量");
         //样本中（申请时间）往前推最晚（近）短信的时间减去申请时间（天数）分布
         HdfsUtil.deleteFile("/result/"+fileType+"/最晚时间-申请时间");
         sc.sql("select md5No,datediff(to_date(max(submitTime)),to_date(first(applicationDt))) from sampleInfo where content != '' group by md5No")
