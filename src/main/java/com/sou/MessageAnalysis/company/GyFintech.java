@@ -36,69 +36,61 @@ public class GyFintech {
         msgDs.registerTempTable("msg");
         //样本手机号码md5文件 大额 YB_DE 小额 YB_XE
         Dataset<Row> sampleDs = getSampleRdd(jsc, sc, hdfsHost, sourcePath, "YB_"+fileType+".csv");
-//        sampleDs.show();
 
-        HdfsUtil.deleteFile("/result/"+fileType+"/样本+加密号码");
+
         Dataset<Row> sampleTelDs = sampleDs.join(telDs, sampleDs.col("mobile").equalTo(telDs.col("originalNo"))).distinct();
-        sampleDs.write().csv("hdfs://10.0.1.95:9000/result/"+fileType+"/样本+加密号码");
-//        sampleTelDs.show();
-//        sc.sql("select applicationDt,to_date(applicationDt) from sampleInfo").show();
+        write2csv(sampleDs,"样本+加密号码");
 
-
-        HdfsUtil.deleteFile("/result/"+fileType+"/样本+加密号码+短信文件");
         Dataset<Row> sampleTelMsgDs = sampleTelDs.join(msgDs, sampleTelDs.col("md5No").equalTo(msgDs.col("tel")), "left");
-        sampleTelMsgDs.write().csv("hdfs://10.0.1.95:9000/result/"+fileType+"/样本+加密号码+短信文件");
+        write2csv(sampleTelMsgDs,"样本+加密号码+短信文件");
         sampleTelMsgDs.registerTempTable("totalSampleInfo");
+
+        //样本中号码的短信数量分布
+        Dataset<Row> allUserMsgCountDs = sc.sql("select distinct(md5No),count(*) from totalSampleInfo where content != '' GROUP BY md5No ");
+        write2csv(allUserMsgCountDs,"ALL用户短信数量");
+
+        //未匹配的手机号码
+        Dataset<Row> allUnmatchDs = sc.sql("select distinct(md5No) from totalSampleInfo where content is null");
+        write2csv(allUnmatchDs,"ALL未匹配短信用户");
 
         Dataset<Row> sample2YearDs = sc.sql("select applicationDt,originalNo,overdueDays,md5No,content,submitTime from totalSampleInfo where content != '' and abs(datediff(to_date(submitTime),to_date(applicationDt))) <= 700");
         sample2YearDs.registerTempTable("sampleInfo");
+        write2csv(sample2YearDs,"2YEAR匹配用户短信");
 
-        HdfsUtil.deleteFile("/result/"+fileType+"/匹配用户短信");
-        sample2YearDs.write().csv("hdfs://10.0.1.95:9000/result/"+fileType+"/匹配用户短信");
+        //样本中号码的短信数量分布
+        Dataset<Row> twoYearUserMsgCountDs = sc.sql("select distinct(md5No),count(*) from sampleInfo where content != '' GROUP BY md5No ");
+        write2csv(twoYearUserMsgCountDs,"2YEAR用户短信数量");
 
-
-        HdfsUtil.deleteFile("/result/"+fileType+"/匹配短信用户");
         Dataset<Row> msgSampleDs = sc.sql("select distinct(md5No) from sampleInfo where content != ''").distinct();
-        msgSampleDs.write().csv("hdfs://10.0.1.95:9000/result/"+fileType+"/匹配短信用户");
+        write2csv(msgSampleDs,"2YEAR匹配短信用户");
+
         //未匹配的手机号码
-        HdfsUtil.deleteFile("/result/"+fileType+"/未匹配短信用户");
-        sc.sql("select distinct(md5No) from sampleInfo where content is null")
-                .write().csv("hdfs://10.0.1.95:9000/result/"+fileType+"/未匹配短信用户");
+        Dataset<Row> unmatchDs = sc.sql("select distinct(md5No) from sampleInfo where content is null");
+        write2csv(unmatchDs,"2YEAR未匹配短信用户");
+
         //短信中样本覆盖数量
         Long sampleInMsgCount = msgSampleDs.count();
         //短信号码（样本）在短信中的覆盖率
         logger.error("短信号码（样本）在短信中的覆盖率:"+sampleInMsgCount+"/"+sampleCount+"="+sampleInMsgCount/sampleCount);
 
-        HdfsUtil.deleteFile("/result/"+fileType+"/用户短信数量");
-        //样本中号码的短信数量分布
-        sc.sql("select distinct(md5No),count(*) from sampleInfo where content != '' GROUP BY md5No ")
-                .write().csv("hdfs://10.0.1.95:9000/result/"+fileType+"/用户短信数量");
         //样本中（申请时间）往前推最晚（近）短信的时间减去申请时间（天数）分布
-        HdfsUtil.deleteFile("/result/"+fileType+"/最晚时间-申请时间");
-        sc.sql("select md5No,datediff(to_date(max(submitTime)),to_date(first(applicationDt))) from sampleInfo where content != '' group by md5No")
-                .write().csv("hdfs://10.0.1.95:9000/result/"+fileType+"/最近时间-申请时间");
+        Dataset<Row> submitTime_applicationDtDs = sc.sql("select md5No,datediff(to_date(max(submitTime)),to_date(first(applicationDt))) from sampleInfo where content != '' group by md5No");
+        write2csv(submitTime_applicationDtDs,"最晚时间-申请时间");
 
         //样本中（申请时间）往前推最早（远）短信的时间减去申请时间（天数）分布
-        HdfsUtil.deleteFile("/result/"+fileType+"/申请时间-最早时间");
-        sc.sql("select md5No,datediff(to_date(first(applicationDt)),to_date(min(submitTime))) from sampleInfo where content != '' group by md5No")
-                .write().csv("hdfs://10.0.1.95:9000/result/"+fileType+"/申请时间-最早时间");
-
-
-//        Properties prop = new Properties();
-//        prop.setProperty("user","root");
-//        prop.setProperty("password","root");
-//
-//
-//
-//        sc.sql("select * from msgInfo").write().jdbc("jdbc:mysql://10.0.1.95:3306/ym","msg_info",prop);
-
-
-//        totalDs.show();
+        Dataset<Row> applicationDt_submitTimeDs = sc.sql("select md5No,datediff(to_date(first(applicationDt)),to_date(min(submitTime))) from sampleInfo where content != '' group by md5No");
+        write2csv(applicationDt_submitTimeDs,"申请时间-最早时间");
 
 
 
 
 
+    }
+
+
+    protected static void write2csv(Dataset<Row> ds, String fileName){
+        HdfsUtil.deleteFile("/result/"+fileType+"/"+fileName);
+        ds.write().csv("hdfs://10.0.1.95:9000/result/"+fileType+"/"+fileName);
     }
     protected static  Dataset<Row>  getTelRdd(JavaSparkContext jsc, SQLContext sc,String hdfsHost, String sourcePath,String fileName){
         JavaRDD<String> lines = jsc.textFile(hdfsHost+sourcePath+fileName);
