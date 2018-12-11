@@ -126,11 +126,11 @@ public class GyFintech {
                 if (msgInfo.length > 3) {
                     tel = msgInfo[1];
                     submitTime = msgInfo[2];
-                    content = msgInfo[3];
+                    content = msgInfo[3].replaceAll(",","  ");
                 } else if (msgInfo.length == 3) {
                     tel = msgInfo[1];
                     submitTime = msgInfo[2];
-                    content = msgInfo[3];
+                    content = msgInfo[3].replaceAll(",","  ");
                 } else {
                     tel = msgInfo[1];
                     submitTime = msgInfo[2];
