@@ -52,6 +52,11 @@ public class GyFintech {
 
         Dataset<Row> sample2YearDs = sc.sql("select applicationDt,originalNo,overdueDays,md5No,content,submitTime from totalSampleInfo where content != '' and abs(datediff(to_date(submitTime),to_date(applicationDt))) <= 700");
         sample2YearDs.registerTempTable("sampleInfo");
+
+        HdfsUtil.deleteFile("/result/"+fileType+"/匹配用户短信");
+        sample2YearDs.write().csv("hdfs://10.0.1.95:9000/result/"+fileType+"/匹配用户短信");
+
+
         HdfsUtil.deleteFile("/result/"+fileType+"/匹配短信用户");
         Dataset<Row> msgSampleDs = sc.sql("select distinct(md5No) from sampleInfo where content != ''").distinct();
         msgSampleDs.write().csv("hdfs://10.0.1.95:9000/result/"+fileType+"/匹配短信用户");
