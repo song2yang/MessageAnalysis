@@ -6,6 +6,15 @@ public class Message {
     private String tel;
     private String submitTime;
     private String content;
+    private String sid;
+
+    public String getSid() {
+        return sid;
+    }
+
+    public void setSid(String sid) {
+        this.sid = sid;
+    }
 
     public String getTel() {
         return tel;

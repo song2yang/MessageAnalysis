@@ -27,21 +27,22 @@ public class GyFintech {
          * 4、样本中（申请时间）往前推最早（远）短信的时间减去申请时间（天数）分布
          */
         //样本原始文件 大额 CJM_1129_DE 小额 CJM_1129_XE
-        Dataset<Row> telDs = getTelRdd(jsc, sc, hdfsHost, sourcePath,"CJM_1129_"+fileType+".txt");
+        Dataset<Row> telDs = getTelRdd(jsc, sc, hdfsHost, sourcePath,"CJM_1129_"+fileType+".txt").distinct();
         telDs.registerTempTable("telPhone");
+
         //样本用户总数量
         Long sampleCount = telDs.count();
         //样本对应短信 大额 DE 小额 XE
         Dataset<Row> msgDs = getMsgRdd(jsc, sc, hdfsHost, sourcePath,fileType+".csv");
         msgDs.registerTempTable("msg");
-        //样本手机号码md5文件 大额 YB_DE 小额 YB_XE
-        Dataset<Row> sampleDs = getSampleRdd(jsc, sc, hdfsHost, sourcePath, "YB_"+fileType+".csv");
 
+        //样本手机号码md5文件 大额 YB_DE 小额 YB_XE
+        Dataset<Row> sampleDs = getSampleRdd(jsc, sc, hdfsHost, sourcePath, "YB_"+fileType+".csv").distinct();
 
         Dataset<Row> sampleTelDs = sampleDs.join(telDs, sampleDs.col("mobile").equalTo(telDs.col("originalNo"))).distinct();
         write2csv(sampleTelDs,"样本+加密号码");
 
-        Dataset<Row> sampleTelMsgDs = sampleTelDs.join(msgDs, sampleTelDs.col("md5No").equalTo(msgDs.col("tel")), "left");
+        Dataset<Row> sampleTelMsgDs = msgDs.join(sampleTelDs, sampleTelDs.col("md5No").equalTo(msgDs.col("tel")), "left_outer");
         write2csv(sampleTelMsgDs,"样本+加密号码+短信文件");
         sampleTelMsgDs.registerTempTable("totalSampleInfo");
 
@@ -53,7 +54,7 @@ public class GyFintech {
         Dataset<Row> allUnmatchDs = sc.sql("select distinct(md5No) from totalSampleInfo where content is null");
         write2csv(allUnmatchDs,"ALL未匹配短信用户");
 
-        Dataset<Row> sample2YearDs = sc.sql("select applicationDt,originalNo,overdueDays,md5No,content,submitTime from totalSampleInfo where content != '' and abs(datediff(to_date(submitTime),to_date(applicationDt))) <= 700");
+        Dataset<Row> sample2YearDs = sc.sql("select applicationDt,originalNo,overdueDays,md5No,content,submitTime,sid from totalSampleInfo where content != '' and abs(datediff(to_date(submitTime),to_date(applicationDt))) <= 700");
         sample2YearDs.registerTempTable("sampleInfo");
         write2csv(sample2YearDs,"2YEAR匹配用户短信");
 
@@ -121,32 +122,22 @@ public class GyFintech {
             public Message call(String msg) throws Exception {
                 Message message = new Message();
 
+                int idIndex = msg.lastIndexOf(",");
+                String id = msg.substring(idIndex+2,msg.length()-1);
+                msg = msg.substring(0,idIndex);
+                int sidIndex = msg.lastIndexOf(",");
+                String sid = msg.substring(sidIndex+2,msg.length()-1);
+                msg = msg.substring(0,sidIndex);
                 String[] msgInfo = msg.split(",");
-                String tel, submitTime, content;
-                if (msgInfo.length > 3) {
-                    tel = msgInfo[1];
-                    submitTime = msgInfo[2];
-                    content = msgInfo[3].replaceAll(",","  ");
-                } else if (msgInfo.length == 3) {
-                    tel = msgInfo[1];
-                    submitTime = msgInfo[2];
-                    content = msgInfo[3].replaceAll(",","  ");
-                } else {
-                    tel = msgInfo[1];
-                    submitTime = msgInfo[2];
-                    content = "";
-                }
+                String serviceId = msgInfo[0].substring(1,+msgInfo[0].length()-1);
+                String tel = msgInfo[1].substring(1,+msgInfo[1].length()-1);
+                String submitTime = msgInfo[2].substring(1,+msgInfo[2].length()-1);
+                String content = msg.substring(msgInfo[0].length()+msgInfo[1].length()+msgInfo[2].length()+4,msg.length()-1);
 
-                message.setTel(tel.substring(1,tel.length()-1));
-                if (content.length()>2){
-                    message.setContent(content.substring(1,content.length()-1));
-                }else {
-                    System.out.println(content);
-                    message.setContent(content);
-                }
-
-                message.setSubmitTime(submitTime.substring(1,submitTime.length()-1));
-
+                message.setContent(content);
+                message.setSid(sid);
+                message.setSubmitTime(submitTime);
+                message.setTel(tel);
                 return message;
             }
         });

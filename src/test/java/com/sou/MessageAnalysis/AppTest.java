@@ -23,12 +23,19 @@ public class AppTest
     {
         public static void main(String[] args) {
 
-            String msg = "\"300205\",\"B619AAF6963B1C4D4CB187D66234D0F1\",\"2015-03-31 17:42:48\",\",共提现110.80元\",\"20180116001891148451\",\"3683825959\"";
-            String[] split = msg.split(",");
+            String msg = "\"91810\"," + //特服号
+                    "\"5232E572256E8A3902B367EF50C518F0\"," + //md5
+                    "\"2016-12-28 07:12:42\"," + //submitTime
+                    "\"1,100元扣款失败，请用app或微信号主动还款。如有疑问，可微信、APP或者10101058电话咨询人工客服确认情况。如已还款，请忽略本通知。\"," + //content
+                    "\"20180112000233316514\"," + // sid
+                    "\"100005776442925\""; //id
 
-            for (String str:split) {
-                System.out.println(str);
-            }
+
+
+        }
+
+        public static void splitMsg(){
+
         }
 
 }
