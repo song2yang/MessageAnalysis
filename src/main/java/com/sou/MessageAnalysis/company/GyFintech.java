@@ -39,7 +39,7 @@ public class GyFintech {
 
 
         Dataset<Row> sampleTelDs = sampleDs.join(telDs, sampleDs.col("mobile").equalTo(telDs.col("originalNo"))).distinct();
-        write2csv(sampleDs,"样本+加密号码");
+        write2csv(sampleTelDs,"样本+加密号码");
 
         Dataset<Row> sampleTelMsgDs = sampleTelDs.join(msgDs, sampleTelDs.col("md5No").equalTo(msgDs.col("tel")), "left");
         write2csv(sampleTelMsgDs,"样本+加密号码+短信文件");
