@@ -3,6 +3,7 @@ package util;
 
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -146,12 +147,10 @@ public class PropertiesUtil {
             if (!loadedFiles.contains(location)) {
                 loadedFiles.add(location);
                 logger.debug("Loading properties file from path:{}", location);
-                FileInputStream is = null;
+                InputStream is = null;
                 try {
-                    String path = resourceLoader.getClass().getResource("/")
-                            .getPath();// 得到工程名WEB-INF/classes/路径
-                    //path = path.substring(1, path.indexOf("classes"));
-                    is = new FileInputStream(path + location);
+
+                    is = PropertiesUtil.class.getClassLoader().getResourceAsStream(location);
                     properties.load(is);
                 } catch (IOException ex) {
                     logger.info("不能加载资源文件 路径为:{}, {} ", location,

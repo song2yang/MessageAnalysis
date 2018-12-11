@@ -14,7 +14,7 @@ import util.PropertiesUtil;
 public class App {
     private static Logger logger = Logger.getLogger(App.class);
 
-    private static String profile = Config.profile;
+    private static String profile = "pro";
     private static String sparkMaster;
     private static String hdfsHost;
     private static String sourcePath;
@@ -28,18 +28,16 @@ public class App {
             logger.error(e.getMessage());
         }
 
-//        sparkMaster = PropertiesUtil.getProperty("spark.master");
-//        sparkMaster = "spark://10.0.1.95:7077";
-        sparkMaster = "spark://10.0.1.95:7077";
-//        hdfsHost = PropertiesUtil.getProperty("hdfs.host");
-        hdfsHost = "hdfs://10.0.1.95:9000/";
-//        sourcePath = PropertiesUtil.getProperty("source.path");
-        sourcePath = "/data/test.txt";
-//        gySourcePath = PropertiesUtil.getProperty("source.gy.path");
-        gySourcePath = "/data/gy/";
+        sparkMaster = PropertiesUtil.getProperty("spark.master");
+        hdfsHost = PropertiesUtil.getProperty("hdfs.host");
+        sourcePath = PropertiesUtil.getProperty("source.path");
+        gySourcePath = PropertiesUtil.getProperty("source.gy.path");
     }
 
     public static void main(String[] args) {
+        logger.error(sparkMaster);
+        logger.error(hdfsHost);
+        logger.error(sourcePath);
 
         SparkConf conf = new SparkConf().setAppName("MessageAnalyse").setMaster(sparkMaster);
 
