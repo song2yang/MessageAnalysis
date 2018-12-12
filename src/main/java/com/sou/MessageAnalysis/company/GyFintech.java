@@ -79,7 +79,7 @@ public class GyFintech {
         write2csv(submitTime_applicationDtDs,"最晚时间-申请时间");
 
         //样本中（申请时间）往前推最早（远）短信的时间减去申请时间（天数）分布
-        Dataset<Row> applicationDt_submitTimeDs = sc.sql("select md5No,datediff(to_date(first(applicationDt)),to_date(min(submitTime))) from sampleInfo where content != '' group by md5No");
+        Dataset<Row> applicationDt_submitTimeDs = sc.sql("select md5No,datedatediffdiff(to_date(first(applicationDt)),to_date(min(submitTime))) from sampleInfo where content != '' group by md5No");
         write2csv(applicationDt_submitTimeDs,"申请时间-最早时间");
 
 
