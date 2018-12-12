@@ -17,7 +17,84 @@ import java.text.SimpleDateFormat;
 
 public class GyFintech {
 
-    private static final String fileType = "XE";
+    private static final String fileType = "DE";
+
+    public static void derivedVars(JavaSparkContext jsc, SQLContext sc, String hdfsHost, String sourcePath,Logger logger){
+        /**
+         * 根据规则衍生变量
+         */
+
+        //样本原始文件 大额 CJM_1129_DE 小额 CJM_1129_XE
+        Dataset<Row> telDs = getTelRdd(jsc, sc, hdfsHost, sourcePath,"CJM_1129_"+fileType+".txt").distinct();
+        telDs.registerTempTable("telPhone");
+
+        //样本手机号码md5文件 大额 YB_DE 小额 YB_XE
+        Dataset<Row> sampleDs = getSampleRdd(jsc, sc, hdfsHost, sourcePath, "YB_"+fileType+".csv").distinct();
+
+        Dataset<Row> sampleTelDs = sampleDs.join(telDs, sampleDs.col("mobile").equalTo(telDs.col("originalNo"))).distinct();
+        sampleTelDs.show();
+
+        //样本对应短信 大额 DE 小额 XE
+        Dataset<Row> msgTagDs = getMsgTagRdd(jsc, sc, hdfsHost, sourcePath,"zz_tag_"+fileType+"_20w.csv").distinct();
+        msgTagDs.registerTempTable("msg");
+
+        Dataset<Row> sampleTagDs = sampleTelDs.join(msgTagDs, msgTagDs.col("telMd5").equalTo(sampleTelDs.col("md5No")));
+        sampleTagDs.registerTempTable("sampleTagTemp");
+        write2csv(sampleTagDs,"sampleTagDs");
+
+
+        sampleTagDs = sc.sql("select createTime,dt,id,mark,month,msgId,sendTime,serviceNo,tagKey,tagVal,uuid,year,applicationDt," +
+                "mobile,overdueDays,md5No from sampleTagTemp");
+        sampleTagDs.registerTempTable("sampleTag");
+
+        /**
+         * 基础变量
+         * 统计指标	说明
+         * CNT	总笔数
+         * AMT	总金额
+         * MAX	最大金额
+         * MIN	最小金额
+         * AVG	平均金额
+         * VAR	方差金额
+         * KURT	峰度
+         * SKEW	偏度
+         * MED	中位数
+         * 25Q	25分位
+         * 75Q	75分位
+         * AVGS	新平均金额（除以对应天数）
+         * SKEWS	新偏度（使用新的平均值）
+         * KURTS	新峰度（使用新的平均值）
+         * DAYS	有流水的天数
+         * 5000DAYS	金额大于5000元的天数
+         * 1000DAYS	金额大于1000元的天数
+         * 3000DAYS	金额大于3000元的天数
+         * 1NUM	金额小于1元的数量
+         * 1AMT	金额小于1元的金额
+         * 2AMT	金额大于10000元的数量
+         * 3AMT	金额大于10000元的金额
+         * 4AMT	金额小于1元的数量占比
+         * 5AMT	金额小于1元的金额占比
+         * 6AMT	金额大于10000元的数量占比
+         * 7AMT	金额大于10000元的金额占比
+         * 8AMT	金额大于500元的天数
+         */
+
+        /* CNT 总笔数 */
+
+        Dataset<Row> cntDs = sc.sql("select md5No ,count(*) from sampleTag group by md5No");
+        cntDs.show();
+
+
+
+        /* AMT	总金额 */
+        /* MAX	最大金额 */
+        /* MIN	最小金额 */
+        /* AVG	平均金额 */
+        /* VAR	方差金额 */
+        /* KURT	峰度 */
+        /* SKEW	偏度 */
+
+    }
 
     public static void msgStatistics(JavaSparkContext jsc, SQLContext sc, String hdfsHost, String sourcePath,Logger logger){
         /**
@@ -148,8 +225,8 @@ public class GyFintech {
         return msgDf;
     }
 
-    protected static void getMsgTagRdd(JavaSparkContext jsc,SQLContext sc,String hdfsHost,String sourcePath,String fileName){
-        JavaRDD<String> msgTagLines = jsc.textFile(hdfsHost+sourcePath + "zz_test.csv");
+    protected static Dataset<Row> getMsgTagRdd(JavaSparkContext jsc,SQLContext sc,String hdfsHost,String sourcePath,String fileName){
+        JavaRDD<String> msgTagLines = jsc.textFile(hdfsHost+sourcePath + fileName);
 
         JavaRDD<Object> msgTagRdd = msgTagLines.map(new Function<String, Object>() {
             @Override
@@ -176,10 +253,10 @@ public class GyFintech {
             }
         });
 
-        Dataset<Row> msgTagDf = sc.createDataFrame(msgTagRdd, MessageTag.class);
+        Dataset<Row> msgTagDf = sc.createDataFrame(msgTagRdd, MessageTag.class).distinct();
         msgTagDf.registerTempTable("msgTag");
 
-        msgTagDf.show();
+        return msgTagDf;
     }
 
     private static Dataset<Row> getSampleRdd(JavaSparkContext jsc,SQLContext sc,String hdfsHost,String sourcePath,String fileName){
