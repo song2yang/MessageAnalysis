@@ -14,7 +14,7 @@ import util.PropertiesUtil;
 public class App {
     private static Logger logger = Logger.getLogger(App.class);
 
-    private static String profile = "pro";
+    private static String profile = "dev";
     private static String sparkMaster;
     private static String hdfsHost;
     private static String sourcePath;
