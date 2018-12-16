@@ -90,7 +90,7 @@ public class GyFintech {
         /* CNT 总笔数 */
         Dataset<Row> cntDs = sc.sql("select md5No ,count(*) as CNT from sampleAmt group by md5No");
 
-        totalDs =  mergeDataSet(telDs,cntDs);
+      //  totalDs =  mergeDataSet(telDs,cntDs);
         /* AMT	总金额
         *
         *  loan_amount	网络借贷-借款金额
@@ -102,11 +102,11 @@ public class GyFintech {
         *  */
 
         Dataset<Row> amtDs = sc.sql("select md5No,sum(tagVal) as AMT from sampleAmt group by md5No");
-        totalDs = mergeDataSet(totalDs,amtDs);
+    //    totalDs = mergeDataSet(totalDs,amtDs);
 
         /* MAX	最大金额 */
         Dataset<Row> maxDs = sc.sql("select md5No,max(tagVal) as MAX from sampleAmt group by md5No");
-        totalDs = mergeDataSet(totalDs,maxDs);
+        totalDs = mergeDataSet(telDs,maxDs);
 
         /* MIN	最小金额 */
         Dataset<Row> minDs = sc.sql("select md5No,min(tagVal) as MIN from sampleAmt group by md5No");
@@ -123,8 +123,6 @@ public class GyFintech {
         /* KURT	峰度 */
         Dataset<Row> kurtDs = sc.sql("select md5No,kurtosis(tagVal) as KURT from sampleAmt group by md5No");
         totalDs = mergeDataSet(totalDs,kurtDs);
-        totalDs.write().csv("/Users/souyouyou/Desktop/cloud/vars");
-        totalDs.show();
         /* SKEW	偏度 */
         Dataset<Row> skewDs = sc.sql("select md5No,skewness(tagVal) as SKEW from sampleAmt group by md5No");
         totalDs = mergeDataSet(totalDs,skewDs);
@@ -165,14 +163,14 @@ public class GyFintech {
 
         /* 3AMT	金额小于1元的数量占比 */
         Dataset<Row> amt3Ds = amt1Ds.join(cntDs, cntDs.col("md5No").equalTo(amt1Ds.col("md5No")))
-                .withColumn("3AMT", amt1Ds.col("1AMT").divide(cntDs.col("CNT"))).drop(cntDs.col("md5No"));
+                .withColumn("3AMT", amt1Ds.col("1AMT").divide(cntDs.col("CNT"))).drop(cntDs.col("md5No")).drop(cntDs.col("CNT"));
 
-        totalDs = mergeDataSet(totalDs,amt3Ds).drop(amt3Ds.col("CNT"));
+        totalDs = mergeDataSet(totalDs,amt3Ds);
 
         /* 4AMT	金额小于1元的金额占比 */
         Dataset<Row> amt4Ds = amt2Ds.join(amtDs,amt2Ds.col("md5No").equalTo(amtDs.col("md5No")))
-                .withColumn("4AMT",amt2Ds.col("2AMT").divide(amtDs.col("AMT"))).drop(amtDs.col("md5No"));
-        totalDs = mergeDataSet(totalDs,amt4Ds).drop(amt4Ds.col("AMT"));
+                .withColumn("4AMT",amt2Ds.col("2AMT").divide(amtDs.col("AMT"))).drop(amtDs.col("md5No")).drop(amtDs.col("AMT"));
+        totalDs = mergeDataSet(totalDs,amt4Ds);
 
         /* 5AMT	金额大于10000元的数量 */
         Dataset<Row> amt5Ds = countsAmtByCondition(sc,"> 10000","5AMT");
@@ -193,6 +191,7 @@ public class GyFintech {
         totalDs = mergeDataSet(totalDs,amt8Ds);
 
         write2csv(totalDs,"totalDs");
+        totalDs.show();
 
 
 
