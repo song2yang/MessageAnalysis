@@ -159,22 +159,20 @@ public class GyFintech {
 
         /* 1AMT	金额小于1元的数量 */
         Dataset<Row> amt1Ds = countsAmtByCondition(sc,"< 1","1AMT");
-        totalDs = mergeDataSet(totalDs,amt1Ds);
 
         /* 2AMT	金额小于1元的金额 */
         Dataset<Row> amt2Ds = sumAmtByCondition(sc, "< 1","2AMT");
-        totalDs = mergeDataSet(totalDs,amt2Ds);
-
-
-
 
         /* 3AMT	金额小于1元的数量占比 */
         Dataset<Row> amt3Ds = amt1Ds.join(cntDs, cntDs.col("md5No").equalTo(amt1Ds.col("md5No")))
                 .withColumn("3AMT", amt1Ds.col("1AMT").divide(cntDs.col("CNT"))).drop(cntDs.col("md5No"));
 
+        totalDs = mergeDataSet(totalDs,amt3Ds);
+
         /* 4AMT	金额小于1元的金额占比 */
         Dataset<Row> amt4Ds = amt2Ds.join(amtDs,amt2Ds.col("md5No").equalTo(amtDs.col("md5No")))
                 .withColumn("4AMT",amt2Ds.col("2AMT").divide(amtDs.col("AMT"))).drop(amtDs.col("md5No"));
+        totalDs = mergeDataSet(totalDs,amt4Ds);
 
         /* 5AMT	金额大于10000元的数量 */
         Dataset<Row> amt5Ds = countsAmtByCondition(sc,"> 10000","5AMT");
@@ -187,27 +185,14 @@ public class GyFintech {
         Dataset<Row> amt7Ds = amt5Ds.join(cntDs,amt5Ds.col("md5No").equalTo(cntDs.col("md5No")))
                 .withColumn("7AMT",amt5Ds.col("5AMT").divide(cntDs.col("CNT"))).drop(cntDs.col("md5No"));
 
+        totalDs = mergeDataSet(totalDs,amt7Ds);
         /* 8AMT	金额大于10000元的金额占比 */
         Dataset<Row> amt8Ds = amt6Ds.join(amtDs,amt6Ds.col("md5No").equalTo(amtDs.col("md5No")))
                 .withColumn("8AMT",amt6Ds.col("6AMT").divide(amtDs.col("AMT"))).drop(amtDs.col("md5No"));
-        Dataset<Row>[] ds = new Dataset[17];
-        ds[0] = maxDs;
-        ds[1] = minDs;
-        ds[2] = avgDs;
-        ds[3] = varDs;
-        ds[4] = kurtDs;
-        ds[5] = skewDs;
-        ds[6] = pct25Ds;
-        ds[7] = pct75Ds;
-        ds[8] = daysDs;
-        ds[9] = days500Ds;
-        ds[10] = days1000Ds;
-        ds[11] = days3000Ds;
-        ds[12] = days5000Ds;
-        ds[13] = amt3Ds.drop(amt3Ds.col("CNT"));
-        ds[14] = amt4Ds.drop(amt4Ds.col("AMT"));
-        ds[15] = amt7Ds;
-        ds[16] = amt8Ds;
+
+        totalDs = mergeDataSet(totalDs,amt8Ds);
+
+        write2csv(totalDs,"totalDs");
 
 
 
