@@ -338,7 +338,7 @@ public class GyFintech {
      */
     protected static void write2csv(Dataset<Row> ds, String fileName){
         HdfsUtil.deleteFile("/result/"+fileType+"/"+fileName);
-        ds.write().option("header",true).csv("hdfs://10.0.1.95:9000/result/"+fileType+"/"+fileName);
+        ds.repartition(1).write().option("header",true).csv("hdfs://10.0.1.95:9000/result/"+fileType+"/"+fileName);
     }
 
     /**
