@@ -167,12 +167,12 @@ public class GyFintech {
         Dataset<Row> amt3Ds = amt1Ds.join(cntDs, cntDs.col("md5No").equalTo(amt1Ds.col("md5No")))
                 .withColumn("3AMT", amt1Ds.col("1AMT").divide(cntDs.col("CNT"))).drop(cntDs.col("md5No"));
 
-        totalDs = mergeDataSet(totalDs,amt3Ds);
+        totalDs = mergeDataSet(totalDs,amt3Ds).drop(amt3Ds.col("CNT"));
 
         /* 4AMT	金额小于1元的金额占比 */
         Dataset<Row> amt4Ds = amt2Ds.join(amtDs,amt2Ds.col("md5No").equalTo(amtDs.col("md5No")))
                 .withColumn("4AMT",amt2Ds.col("2AMT").divide(amtDs.col("AMT"))).drop(amtDs.col("md5No"));
-        totalDs = mergeDataSet(totalDs,amt4Ds);
+        totalDs = mergeDataSet(totalDs,amt4Ds).drop(amt4Ds.col("AMT"));
 
         /* 5AMT	金额大于10000元的数量 */
         Dataset<Row> amt5Ds = countsAmtByCondition(sc,"> 10000","5AMT");
