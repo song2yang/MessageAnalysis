@@ -180,6 +180,7 @@ public class GyFintech {
         /* 3AMT	金额小于1元的数量占比 */
         Dataset<Row> amt3Ds = amt1Ds.join(cntDs, cntDs.col("md5No").equalTo(amt1Ds.col("md5No")))
                 .withColumn("3AMT", amt1Ds.col("1AMT").divide(cntDs.col("CNT"))).drop(cntDs.col("md5No")).drop(cntDs.col("CNT"));
+        totalDs.show();
 
         totalDs = mergeDataSet(totalDs,amt3Ds);
 //        System.out.println("金额小于1元的数量占比:"+totalDs.count());
@@ -213,7 +214,7 @@ public class GyFintech {
 
 
 
-        write2csv(totalDs,"totalDs");
+//        write2csv(totalDs,"totalDs");
 
 
 
@@ -223,7 +224,7 @@ public class GyFintech {
     }
 
     protected static Dataset<Row> mergeDataSet(Dataset<Row> ds1,Dataset<Row> ds2){
-        ds1 = ds2.join(ds1,ds1.col("md5No").equalTo(ds2.col("md5No")),"right_outer").drop(ds2.col("md5No"));
+        ds1 = ds1.join(ds2,ds1.col("md5No").equalTo(ds2.col("md5No")),"left_outer").drop(ds1.col("md5No"));
         return ds1;
     }
 
