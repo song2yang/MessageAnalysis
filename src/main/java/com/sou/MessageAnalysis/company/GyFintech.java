@@ -149,7 +149,6 @@ public class GyFintech {
         Dataset<Row> daysDs = sc.sql("select md5No,count(distinct(to_date(sendTime, 'yyyy-MM-dd'))) as DAYS from sampleAmt group by md5No");
         totalDs = mergeDataSet(totalDs,daysDs);
 //        System.out.println("有流水的天数:"+totalDs.count());
-
         /* 500DAYS	金额大于500元的天数 */
         Dataset<Row> days500Ds = amtDayCountsGreaterThan(sc,Double.valueOf(500),"500DAYS");
         totalDs = mergeDataSet(totalDs,days500Ds);
@@ -212,6 +211,8 @@ public class GyFintech {
         totalDs = mergeDataSet(totalDs,amt8Ds);
 //        System.out.println("金额大于10000元的金额占比:"+totalDs.count());
 
+
+
         write2csv(totalDs,"totalDs");
 
 
@@ -222,7 +223,7 @@ public class GyFintech {
     }
 
     protected static Dataset<Row> mergeDataSet(Dataset<Row> ds1,Dataset<Row> ds2){
-        ds1 = ds1.join(ds2,ds1.col("md5No").equalTo(ds2.col("md5No")),"left_outer").drop(ds1.col("md5No"));
+        ds1 = ds2.join(ds1,ds1.col("md5No").equalTo(ds2.col("md5No")),"right_outer").drop(ds2.col("md5No"));
         return ds1;
     }
 
