@@ -7,13 +7,10 @@ import com.sou.MessageAnalysis.bean.gy.TelPhone;
 import org.apache.log4j.Logger;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
-import org.apache.spark.api.java.function.ForeachFunction;
 import org.apache.spark.api.java.function.Function;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SQLContext;
-import scala.Function1;
-import scala.collection.Iterator;
 import util.HdfsUtil;
 
 import java.text.SimpleDateFormat;
@@ -126,7 +123,8 @@ public class GyFintech {
         /* KURT	峰度 */
         Dataset<Row> kurtDs = sc.sql("select md5No,kurtosis(tagVal) as KURT from sampleAmt group by md5No");
         totalDs = mergeDataSet(totalDs,kurtDs);
-
+        totalDs.write().csv("/Users/souyouyou/Desktop/cloud/vars");
+        totalDs.show();
         /* SKEW	偏度 */
         Dataset<Row> skewDs = sc.sql("select md5No,skewness(tagVal) as SKEW from sampleAmt group by md5No");
         totalDs = mergeDataSet(totalDs,skewDs);
@@ -168,8 +166,7 @@ public class GyFintech {
         totalDs = mergeDataSet(totalDs,amt2Ds);
 
 
-        totalDs.write().csv("/Users/souyouyou/Desktop/cloud/vars");
-        totalDs.show();
+
 
         /* 3AMT	金额小于1元的数量占比 */
         Dataset<Row> amt3Ds = amt1Ds.join(cntDs, cntDs.col("md5No").equalTo(amt1Ds.col("md5No")))
