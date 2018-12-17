@@ -40,8 +40,6 @@ public class GyFintech {
         //样本对应短信 大额 DE 小额 XE
         Dataset<Row> msgTagDs = getMsgTagRdd(jsc, sc, hdfsHost, sourcePath,"zz_tag_"+fileType+".csv").distinct();
 
-        System.out.println(msgTagDs.count());
-        System.exit(1);
 //        Dataset<Row> msgTagDs = getMsgTagRdd(jsc, sc, hdfsHost, sourcePath,"zz_tag_"+fileType+"_20w.csv").distinct();
 
 //        msgTagDs.registerTempTable("msg");
