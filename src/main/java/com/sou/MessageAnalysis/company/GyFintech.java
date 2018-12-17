@@ -443,29 +443,25 @@ public class GyFintech {
                 MessageTag messageTag = new MessageTag();
                 String[] msgTagInfo = msgTag.split(",");
 
-                try {
-                    messageTag.setId(msgTagInfo[0].replaceAll("\"",""));
-                    messageTag.setUuid(msgTagInfo[1].replaceAll("\"",""));
-                    messageTag.setTelMd5(msgTagInfo[2].replaceAll("\"",""));
-                    messageTag.setServiceNo(msgTagInfo[3].replaceAll("\"",""));
-                    messageTag.setMark(msgTagInfo[4].replaceAll("\"",""));
-                    messageTag.setTagKey(msgTagInfo[5].replaceAll("\"",""));
-                    messageTag.setTagVal(msgTagInfo[6].replaceAll("\"",""));
-                    messageTag.setYear(msgTagInfo[7].replaceAll("\"",""));
-                    messageTag.setMonth(msgTagInfo[8].replaceAll("\"",""));
-                    messageTag.setDt(msgTagInfo[9].replaceAll("\"",""));
-                    messageTag.setCreateTime(msgTagInfo[10].replaceAll("\"",""));
+                messageTag.setId(msgTagInfo[0].replaceAll("\"",""));
+                messageTag.setUuid(msgTagInfo[1].replaceAll("\"",""));
+                messageTag.setTelMd5(msgTagInfo[2].replaceAll("\"",""));
+                messageTag.setServiceNo(msgTagInfo[3].replaceAll("\"",""));
+                messageTag.setMark(msgTagInfo[4].replaceAll("\"",""));
+                messageTag.setTagKey(msgTagInfo[5].replaceAll("\"",""));
+                messageTag.setTagVal(msgTagInfo[6].replaceAll("\"",""));
+                messageTag.setYear(msgTagInfo[7].replaceAll("\"",""));
+                messageTag.setMonth(msgTagInfo[8].replaceAll("\"",""));
+                messageTag.setDt(msgTagInfo[9].replaceAll("\"",""));
+                messageTag.setCreateTime(msgTagInfo[10].replaceAll("\"",""));
 
-                    SimpleDateFormat sdf1 = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
-                    SimpleDateFormat sdf2 = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-                    String sendTime = sdf2.format(sdf1.parse(msgTagInfo[11].replaceAll("\"", "")));
+                SimpleDateFormat sdf1 = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
+                SimpleDateFormat sdf2 = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                String sendTime = sdf2.format(sdf1.parse(msgTagInfo[11].replaceAll("\"", "")));
 
-                    messageTag.setSendTime(sendTime);
+                messageTag.setSendTime(sendTime);
 //                    messageTag.setMsgId(msgTagInfo[12].replaceAll("\"",""));
 
-                }catch (Exception e){
-                    logger.error(msgTag);
-                }
                 return messageTag;
             }
         });
