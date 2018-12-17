@@ -36,7 +36,9 @@ public class GyFintech {
         sampleTelDs = sampleTelDs.drop(sampleTelDs.col("originalNo"));
 
         //样本对应短信 大额 DE 小额 XE
-        Dataset<Row> msgTagDs = getMsgTagRdd(jsc, sc, hdfsHost, sourcePath,"zz_tag_"+fileType+"_20w.csv").distinct();
+        Dataset<Row> msgTagDs = getMsgTagRdd(jsc, sc, hdfsHost, sourcePath,"zz_tag_"+fileType+".csv").distinct();
+//        Dataset<Row> msgTagDs = getMsgTagRdd(jsc, sc, hdfsHost, sourcePath,"zz_tag_"+fileType+"_20w.csv").distinct();
+
 //        msgTagDs.registerTempTable("msg");
 
 
@@ -202,14 +204,14 @@ public class GyFintech {
 
         /* 7AMT	金额大于10000元的数量占比 */
         Dataset<Row> amt7Ds = amt5Ds.join(cntDs,amt5Ds.col("md5No1").equalTo(cntDs.col("md5No1")),"right_outer")
-                .withColumn("7AMT",amt5Ds.col("5AMT").divide(cntDs.col("CNT"))).drop(cntDs.col("md5No1"));
+                .withColumn("7AMT",amt5Ds.col("5AMT").divide(cntDs.col("CNT"))).drop(cntDs.col("md5No1")).drop(cntDs.col("CNT"));
 
         totalDs = mergeDataSet(totalDs,amt7Ds);
 //        System.out.println("金额大于10000元的数量占比:"+totalDs.count());
 
         /* 8AMT	金额大于10000元的金额占比 */
         Dataset<Row> amt8Ds = amt6Ds.join(amtDs,amt6Ds.col("md5No1").equalTo(amtDs.col("md5No1")),"right_outer")
-                .withColumn("8AMT",amt6Ds.col("6AMT").divide(amtDs.col("AMT"))).drop(amtDs.col("md5No1"));
+                .withColumn("8AMT",amt6Ds.col("6AMT").divide(amtDs.col("AMT"))).drop(amtDs.col("md5No1")).drop(amtDs.col("AMT"));
 
         totalDs = mergeDataSet(totalDs,amt8Ds);
 //        System.out.println("金额大于10000元的金额占比:"+totalDs.count());
