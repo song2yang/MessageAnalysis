@@ -1,5 +1,6 @@
 package com.sou.MessageAnalysis.company;
 
+import com.sou.MessageAnalysis.App;
 import com.sou.MessageAnalysis.bean.gy.Message;
 import com.sou.MessageAnalysis.bean.gy.MessageTag;
 import com.sou.MessageAnalysis.bean.gy.SampleInfo;
@@ -16,6 +17,7 @@ import util.HdfsUtil;
 import java.text.SimpleDateFormat;
 
 public class GyFintech {
+    private static Logger logger = Logger.getLogger(GyFintech.class);
 
     private static final String fileType = "DE";
 
@@ -37,6 +39,9 @@ public class GyFintech {
 
         //样本对应短信 大额 DE 小额 XE
         Dataset<Row> msgTagDs = getMsgTagRdd(jsc, sc, hdfsHost, sourcePath,"zz_tag_"+fileType+".csv").distinct();
+
+        System.out.println(msgTagDs.count());
+        System.exit(1);
 //        Dataset<Row> msgTagDs = getMsgTagRdd(jsc, sc, hdfsHost, sourcePath,"zz_tag_"+fileType+"_20w.csv").distinct();
 
 //        msgTagDs.registerTempTable("msg");
@@ -440,25 +445,29 @@ public class GyFintech {
                 MessageTag messageTag = new MessageTag();
                 String[] msgTagInfo = msgTag.split(",");
 
-                messageTag.setId(msgTagInfo[0].replaceAll("\"",""));
-                messageTag.setUuid(msgTagInfo[1].replaceAll("\"",""));
-                messageTag.setTelMd5(msgTagInfo[2].replaceAll("\"",""));
-                messageTag.setServiceNo(msgTagInfo[3].replaceAll("\"",""));
-                messageTag.setMark(msgTagInfo[4].replaceAll("\"",""));
-                messageTag.setTagKey(msgTagInfo[5].replaceAll("\"",""));
-                messageTag.setTagVal(msgTagInfo[6].replaceAll("\"",""));
-                messageTag.setYear(msgTagInfo[7].replaceAll("\"",""));
-                messageTag.setMonth(msgTagInfo[8].replaceAll("\"",""));
-                messageTag.setDt(msgTagInfo[9].replaceAll("\"",""));
-                messageTag.setCreateTime(msgTagInfo[10].replaceAll("\"",""));
+                try {
+                    messageTag.setId(msgTagInfo[0].replaceAll("\"",""));
+                    messageTag.setUuid(msgTagInfo[1].replaceAll("\"",""));
+                    messageTag.setTelMd5(msgTagInfo[2].replaceAll("\"",""));
+                    messageTag.setServiceNo(msgTagInfo[3].replaceAll("\"",""));
+                    messageTag.setMark(msgTagInfo[4].replaceAll("\"",""));
+                    messageTag.setTagKey(msgTagInfo[5].replaceAll("\"",""));
+                    messageTag.setTagVal(msgTagInfo[6].replaceAll("\"",""));
+                    messageTag.setYear(msgTagInfo[7].replaceAll("\"",""));
+                    messageTag.setMonth(msgTagInfo[8].replaceAll("\"",""));
+                    messageTag.setDt(msgTagInfo[9].replaceAll("\"",""));
+                    messageTag.setCreateTime(msgTagInfo[10].replaceAll("\"",""));
 
-                SimpleDateFormat sdf1 = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
-                SimpleDateFormat sdf2 = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-                String sendTime = sdf2.format(sdf1.parse(msgTagInfo[11].replaceAll("\"", "")));
+                    SimpleDateFormat sdf1 = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
+                    SimpleDateFormat sdf2 = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                    String sendTime = sdf2.format(sdf1.parse(msgTagInfo[11].replaceAll("\"", "")));
 
-                messageTag.setSendTime(sendTime);
-                messageTag.setMsgId(msgTagInfo[12].replaceAll("\"",""));
+                    messageTag.setSendTime(sendTime);
+//                    messageTag.setMsgId(msgTagInfo[12].replaceAll("\"",""));
 
+                }catch (Exception e){
+                    logger.error(msgTag);
+                }
                 return messageTag;
             }
         });
