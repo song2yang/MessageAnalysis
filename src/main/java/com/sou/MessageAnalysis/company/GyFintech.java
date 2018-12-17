@@ -53,7 +53,7 @@ public class GyFintech {
 
         //金额类别标签
         sc.sql("select createTime,dt,id,mark,month,msgId,sendTime,serviceNo,tagKey,tagVal,uuid,year,applicationDt," +
-                "mobile,overdueDays,md5No as md5No1 from sampleTagTemp where tagKey in ('loan_amount','pay_amount','cc_bill_amount','payout_amount','payin_amount') and md5No = '798EF2CFB9153E4522B4C19E1CC89DFF'")
+                "mobile,overdueDays,md5No as md5No1 from sampleTagTemp where tagKey in ('loan_amount','pay_amount','cc_bill_amount','payout_amount','payin_amount')")
                 .distinct()
                 .registerTempTable("sampleAmt");
 
