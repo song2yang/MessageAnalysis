@@ -53,7 +53,7 @@ public class GyFintech {
 
         //金额类别标签
         sc.sql("select createTime,dt,id,mark,month,msgId,sendTime,serviceNo,tagKey,tagVal,uuid,year,applicationDt," +
-                "mobile,overdueDays,md5No as md5No1 from sampleTagTemp where tagKey in ('loan_amount','pay_amount','cc_bill_amount','payout_amount','payin_amount')")
+                "mobile,overdueDays,md5No as md5No1 from sampleTagTemp where tagKey in ('loan_amount','pay_amount','cc_bill_amount','payout_amount','payin_amount') and md5No = '798EF2CFB9153E4522B4C19E1CC89DFF'")
                 .distinct()
                 .registerTempTable("sampleAmt");
 
@@ -182,15 +182,14 @@ public class GyFintech {
 
 
         /* 3AMT	金额小于1元的数量占比 */
-        Dataset<Row> amt3Ds = amt1Ds.join(cntDs, cntDs.col("md5No1").equalTo(amt1Ds.col("md5No1")))
-                .withColumn("3AMT", amt1Ds.col("1AMT").divide(cntDs.col("CNT"))).drop(cntDs.col("md5No1")).drop(cntDs.col("CNT"));
-
+        Dataset<Row> amt3Ds = amt1Ds.join(cntDs, cntDs.col("md5No1").equalTo(amt1Ds.col("md5No1")),"right_outer")
+                .withColumn("3AMT", amt1Ds.col("1AMT").divide(cntDs.col("CNT"))).drop(cntDs.col("md5No1"));
         totalDs = mergeDataSet(totalDs,amt3Ds);
 //        System.out.println("金额小于1元的数量占比:"+totalDs.count());
 
         /* 4AMT	金额小于1元的金额占比 */
-        Dataset<Row> amt4Ds = amt2Ds.join(amtDs,amt2Ds.col("md5No1").equalTo(amtDs.col("md5No1")))
-                .withColumn("4AMT",amt2Ds.col("2AMT").divide(amtDs.col("AMT"))).drop(amtDs.col("md5No1")).drop(amtDs.col("AMT"));
+        Dataset<Row> amt4Ds = amt2Ds.join(amtDs,amt2Ds.col("md5No1").equalTo(amtDs.col("md5No1")),"right_outer")
+                .withColumn("4AMT",amt2Ds.col("2AMT").divide(amtDs.col("AMT"))).drop(amtDs.col("md5No1"));
         totalDs = mergeDataSet(totalDs,amt4Ds);
 //        System.out.println("金额小于1元的金额占比:"+totalDs.count());
 
@@ -202,14 +201,14 @@ public class GyFintech {
 
 
         /* 7AMT	金额大于10000元的数量占比 */
-        Dataset<Row> amt7Ds = amt5Ds.join(cntDs,amt5Ds.col("md5No1").equalTo(cntDs.col("md5No1")))
+        Dataset<Row> amt7Ds = amt5Ds.join(cntDs,amt5Ds.col("md5No1").equalTo(cntDs.col("md5No1")),"right_outer")
                 .withColumn("7AMT",amt5Ds.col("5AMT").divide(cntDs.col("CNT"))).drop(cntDs.col("md5No1"));
 
         totalDs = mergeDataSet(totalDs,amt7Ds);
 //        System.out.println("金额大于10000元的数量占比:"+totalDs.count());
 
         /* 8AMT	金额大于10000元的金额占比 */
-        Dataset<Row> amt8Ds = amt6Ds.join(amtDs,amt6Ds.col("md5No1").equalTo(amtDs.col("md5No1")))
+        Dataset<Row> amt8Ds = amt6Ds.join(amtDs,amt6Ds.col("md5No1").equalTo(amtDs.col("md5No1")),"right_outer")
                 .withColumn("8AMT",amt6Ds.col("6AMT").divide(amtDs.col("AMT"))).drop(amtDs.col("md5No1"));
 
         totalDs = mergeDataSet(totalDs,amt8Ds);
