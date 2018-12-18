@@ -65,8 +65,6 @@ public class GyFintech {
         //全量短信
         Dataset<Row> allSampleDs = sc.sql("select createTime,dt,id,mark,month,msgId,sendTime,serviceNo,tagKey,tagVal,uuid,year,md5No as md5No1" +
                 ",datediff(to_date('"+dt+"'),to_date(sendTime)) as dateDiff from sampleTagTemp where datediff(to_date('"+dt+"'),to_date(sendTime)) between 0 and "+ recentDays);
-        System.out.println("select createTime,dt,id,mark,month,msgId,sendTime,serviceNo,tagKey,tagVal,uuid,year,md5No as md5No1" +
-                ",datediff(to_date('"+dt+"'),to_date(sendTime)) as dateDiff from sampleTagTemp where datediff(to_date('"+dt+"'),to_date(sendTime)) between 0 and "+ recentDays);
         allSampleDs.registerTempTable("sampleAll");
 
 //        allSampleDs.show();
