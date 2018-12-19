@@ -20,6 +20,7 @@ public class App {
     private static Logger logger = Logger.getLogger(App.class);
 
     private static String profile = "pro";
+    private static final String fileType = "DE";
     private static String sparkMaster;
     private static String hdfsHost;
     private static String sourcePath;
@@ -73,16 +74,35 @@ public class App {
 
         String applicationDt = "2018-7-1";
         Dataset<Row> ds = null;
+
+
+        //样本手机号码md5文件（15873222574     BA1674B46C363EFFD6D8B0153699F164）
+        // 大额 CJM_1129_DE 小额 CJM_1129_XE
+        Dataset<Row> telDs = GyFintech.getTelRdd(jsc, sc, hdfsHost, sourcePath,"CJM_1129_"+fileType+".txt").distinct();
+        //        Dataset<Row> telDs = getTelRdd(jsc, sc, hdfsHost, sourcePath,"CJM_1129_DE_single.txt").distinct();
+        telDs = telDs.drop(telDs.col("originalNo"));
+
+
+        Dataset<Row> msgTagDs = GyFintech.getMsgTagRdd(jsc, sc, hdfsHost, sourcePath,"zz_tag_"+fileType+".csv").distinct();
+//           Dataset<Row> msgTagDs = getMsgTagRdd(jsc, sc, hdfsHost, sourcePath,"singleTel_teg.csv").distinct();
+        msgTagDs.registerTempTable("msgTag");
+
+        // 样本手机号码+短息标签临时表
+        Dataset<Row> sampleTagDs = telDs.join(msgTagDs, msgTagDs.col("telMd5").equalTo(telDs.col("md5No")));
+        sampleTagDs.registerTempTable("sampleTagTemp");
+
         for (Integer day:days) {
+
+            //全量短信
+            Dataset<Row> allSampleDs = sc.sql("select createTime,dt,id,mark,month,msgId,sendTime,serviceNo,tagKey,tagVal,uuid,year,md5No as md5No1" +
+                    ",datediff(to_date('"+applicationDt+"'),to_date(sendTime)) as dateDiff from sampleTagTemp where datediff(to_date('"+applicationDt+"'),to_date(sendTime)) between 0 and "+ day);
+            allSampleDs.registerTempTable("sampleAll");
+
             for (String lable:labels){
-                if (null == ds){
-                    ds = GyFintech.derivedVarsByCondition(jsc,sc,hdfsHost,gySourcePath,day,applicationDt,0,24,lable);
-                }else {
-                    Dataset<Row> temp = GyFintech.derivedVarsByCondition(jsc,sc,hdfsHost,gySourcePath,day,applicationDt,0,24,lable);
-                    ds = ds.join(temp,ds.col("md5No").equalTo(temp.col("md5No"))).drop(temp.col("md5No"));
-                }
-                ds.repartition(1).write().option("header",true).csv("/opt/ds/"+day+"_"+lable);
                 ds = null;
+                ds = GyFintech.derivedVarsByCondition(jsc,sc,hdfsHost,gySourcePath,telDs,day,applicationDt,0,24,lable);
+                ds.repartition(1).write().option("header",true).csv("/opt/ds/"+day+"_"+lable);
+
             }
 
         }
