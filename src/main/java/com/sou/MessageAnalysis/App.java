@@ -50,16 +50,16 @@ public class App {
 //        GyFintech.msgStatistics(jsc,sc,hdfsHost,gySourcePath,logger);
 
         String condition = "";
-        Integer[] days = new Integer[1];
-//        days[0] = 7;
-//        days[1] = 30;
-//        days[2] = 60;
-//        days[3] = 90;
-//        days[4] = 120;
-//        days[5] = 150;
-//        days[6] = 180;
-//        days[7] = 270;
-//        days[8] = 360;
+        Integer[] days = new Integer[10];
+        days[0] = 7;
+       days[1] = 30;
+       days[2] = 60;
+        days[3] = 90;
+        days[4] = 120;
+        days[5] = 150;
+        days[6] = 180;
+        days[7] = 270;
+        days[8] = 360;
         days[9] = 720;
 
         String[] labels = new String[5];
@@ -71,7 +71,7 @@ public class App {
 
         List<VariableParam> params = new ArrayList<>();
 
-        String applicationDt = "2016-7-1";
+        String applicationDt = "2018-7-1";
         Dataset<Row> ds = null;
         for (Integer day:days) {
             for (String lable:labels){
@@ -94,8 +94,10 @@ public class App {
             }
         }
 
-
+        
         ds.repartition(1).write().option("header",true).csv("/opt/ds");
+        System.exit(1);
+       // ds.show();
 //        GyFintech.derivedVarsByCondition(jsc,sc,hdfsHost,gySourcePath,100,"2018-1-1",0,24,"loan_amount").show();
 
 

@@ -37,8 +37,8 @@ public class GyFintech {
 
         //样本手机号码md5文件（15873222574     BA1674B46C363EFFD6D8B0153699F164）
         // 大额 CJM_1129_DE 小额 CJM_1129_XE
-//        Dataset<Row> telDs = getTelRdd(jsc, sc, hdfsHost, sourcePath,"CJM_1129_"+fileType+".txt").distinct();
-        Dataset<Row> telDs = getTelRdd(jsc, sc, hdfsHost, sourcePath,"CJM_1129_DE_single.txt").distinct();
+       Dataset<Row> telDs = getTelRdd(jsc, sc, hdfsHost, sourcePath,"CJM_1129_"+fileType+".txt").distinct();
+    //        Dataset<Row> telDs = getTelRdd(jsc, sc, hdfsHost, sourcePath,"CJM_1129_DE_single.txt").distinct();
         telDs = telDs.drop(telDs.col("originalNo"));
 //        telDs.registerTempTable("telPhone");
 
@@ -54,8 +54,8 @@ public class GyFintech {
         // ，火车票订单号1526484907050001(2018-05-17 13:00 西安北-宝鸡南 D2689)。退款到账情况请联系微信查询
         //。","20180524000013526395","1526518785642001"
         // 大额 DE 小额 XE
-//        Dataset<Row> msgTagDs = getMsgTagRdd(jsc, sc, hdfsHost, sourcePath,"zz_tag_"+fileType+"_20w.csv").distinct();
-        Dataset<Row> msgTagDs = getMsgTagRdd(jsc, sc, hdfsHost, sourcePath,"singleTel_teg.csv").distinct();
+     Dataset<Row> msgTagDs = getMsgTagRdd(jsc, sc, hdfsHost, sourcePath,"zz_tag_"+fileType+"_20w.csv").distinct();
+//           Dataset<Row> msgTagDs = getMsgTagRdd(jsc, sc, hdfsHost, sourcePath,"singleTel_teg.csv").distinct();
         msgTagDs.registerTempTable("msgTag");
 
         // 样本手机号码+短息标签临时表
