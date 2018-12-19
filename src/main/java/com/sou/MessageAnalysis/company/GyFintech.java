@@ -148,27 +148,27 @@ public class GyFintech {
         Dataset<Row> daysDs = sc.sql("select md5No1,count(distinct(to_date(sendTime, 'yyyy-MM-dd'))) as "+tagLabel+"DAYS from "+tagLabel+"sampleSingle group by md5No1");
         totalDs = mergeDataSet(totalDs,daysDs);
 
-//        /* 500DAYS	金额大于500元的天数 */
-//        Dataset<Row> days500Ds = amtDayCountsGreaterThan(sc,Double.valueOf(500),"500DAYS");
-//        totalDs = mergeDataSet(totalDs,days500Ds);
-//
-//        /* 1000DAYS	金额大于1000元的天数 */
-//        Dataset<Row> days1000Ds = amtDayCountsGreaterThan(sc,Double.valueOf(1000),"1000DAYS");
-//        totalDs = mergeDataSet(totalDs,days1000Ds);
-//
-//        /* 3000DAYS	金额大于3000元的天数 */
-//        Dataset<Row> days3000Ds = amtDayCountsGreaterThan(sc,Double.valueOf(3000),"3000DAYS");
-//        totalDs = mergeDataSet(totalDs,days3000Ds);
-//
-//        /* 5000DAYS	金额大于5000元的天数 */
-//        Dataset<Row> days5000Ds = amtDayCountsGreaterThan(sc,Double.valueOf(5000),"5000DAYS");
-//        totalDs = mergeDataSet(totalDs,days5000Ds);
-//
-//        /* 1AMT	金额小于1元的数量 */
-//        Dataset<Row> amt1Ds = countsAmtByCondition(sc,"< 1","1AMT");
-//
-//        /* 2AMT	金额小于1元的金额 */
-//        Dataset<Row> amt2Ds = sumAmtByCondition(sc, "< 1","2AMT");
+        /* 500DAYS	金额大于500元的天数 */
+        Dataset<Row> days500Ds = amtDayCountsGreaterThan(sc,Double.valueOf(500),tagLabel+"500DAYS",tagLabel);
+        totalDs = mergeDataSet(totalDs,days500Ds);
+
+        /* 1000DAYS	金额大于1000元的天数 */
+        Dataset<Row> days1000Ds = amtDayCountsGreaterThan(sc,Double.valueOf(1000),tagLabel+"1000DAYS",tagLabel);
+        totalDs = mergeDataSet(totalDs,days1000Ds);
+
+        /* 3000DAYS	金额大于3000元的天数 */
+        Dataset<Row> days3000Ds = amtDayCountsGreaterThan(sc,Double.valueOf(3000),tagLabel+"3000DAYS",tagLabel);
+        totalDs = mergeDataSet(totalDs,days3000Ds);
+
+        /* 5000DAYS	金额大于5000元的天数 */
+        Dataset<Row> days5000Ds = amtDayCountsGreaterThan(sc,Double.valueOf(5000),tagLabel+"5000DAYS",tagLabel);
+        totalDs = mergeDataSet(totalDs,days5000Ds);
+
+        /* 1AMT	金额小于1元的数量 */
+        Dataset<Row> amt1Ds = countsAmtByCondition(sc,"< 1",tagLabel+"1AMT",tagLabel);
+
+        /* 2AMT	金额小于1元的金额 */
+        Dataset<Row> amt2Ds = sumAmtByCondition(sc, "< 1",tagLabel+"2AMT",tagLabel);
 //
 //
 //
@@ -181,13 +181,13 @@ public class GyFintech {
 //        Dataset<Row> amt4Ds = amt2Ds.join(amtDs,amt2Ds.col("md5No1").equalTo(amtDs.col("md5No1")),"right_outer")
 //                .withColumn("4AMT",amt2Ds.col("2AMT").divide(amtDs.col("AMT"))).drop(amtDs.col("md5No1"));
 //        totalDs = mergeDataSet(totalDs,amt4Ds);
-//
-//        /* 5AMT	金额大于10000元的数量 */
-//        Dataset<Row> amt5Ds = countsAmtByCondition(sc,"> 10000","5AMT");
-//
-//        /* 6AMT	金额大于10000元的金额 */
-//        Dataset<Row> amt6Ds = sumAmtByCondition(sc, "> 10000","6AMT");
-//
+
+        /* 5AMT	金额大于10000元的数量 */
+        Dataset<Row> amt5Ds = countsAmtByCondition(sc,"> 10000",tagLabel+"5AMT",tagLabel);
+
+        /* 6AMT	金额大于10000元的金额 */
+        Dataset<Row> amt6Ds = sumAmtByCondition(sc, "> 10000",tagLabel+"6AMT",tagLabel);
+
 //
 //        /* 7AMT	金额大于10000元的数量占比 */
 //        Dataset<Row> amt7Ds = amt5Ds.join(amt_cntDs,amt5Ds.col("md5No1").equalTo(amt_cntDs.col("md5No1")),"right_outer")

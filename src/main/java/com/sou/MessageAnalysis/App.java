@@ -52,8 +52,8 @@ public class App {
         String condition = "";
         Integer[] days = new Integer[10];
         days[0] = 7;
-       days[1] = 30;
-       days[2] = 60;
+        days[1] = 30;
+        days[2] = 60;
         days[3] = 90;
         days[4] = 120;
         days[5] = 150;
@@ -75,27 +75,20 @@ public class App {
         Dataset<Row> ds = null;
         for (Integer day:days) {
             for (String lable:labels){
-                VariableParam param = new VariableParam();
-                param.setDays(day);
-                param.setLableName(lable);
-
-                params.add(param);
+                if (null == ds){
+                    ds = GyFintech.derivedVarsByCondition(jsc,sc,hdfsHost,gySourcePath,day,applicationDt,0,24,lable);
+                }else {
+                    Dataset<Row> temp = GyFintech.derivedVarsByCondition(jsc,sc,hdfsHost,gySourcePath,day,applicationDt,0,24,lable);
+                    ds = ds.join(temp,ds.col("md5No").equalTo(temp.col("md5No"))).drop(temp.col("md5No"));
+                }
+                ds.repartition(1).write().option("header",true).csv("/opt/ds/"+day+"_"+lable);
+                ds = null;
             }
 
-        }
-
-        for (int i = 0; i < params.size(); i++) {
-            VariableParam param = params.get(i);
-            if (null == ds){
-                ds = GyFintech.derivedVarsByCondition(jsc,sc,hdfsHost,gySourcePath,param.getDays(),applicationDt,0,24,param.getLableName());
-            }else {
-                Dataset<Row> temp = GyFintech.derivedVarsByCondition(jsc,sc,hdfsHost,gySourcePath,param.getDays(),applicationDt,0,24,param.getLableName());
-                ds = ds.join(temp,ds.col("md5No").equalTo(temp.col("md5No"))).drop(temp.col("md5No"));
-            }
         }
 
         
-        ds.repartition(1).write().option("header",true).csv("/opt/ds");
+
         System.exit(1);
        // ds.show();
 //        GyFintech.derivedVarsByCondition(jsc,sc,hdfsHost,gySourcePath,100,"2018-1-1",0,24,"loan_amount").show();
