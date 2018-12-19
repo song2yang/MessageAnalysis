@@ -38,28 +38,28 @@ public class GyFintech {
 
 
         //单标签短信
-        Dataset<Row> singleSampleDs = sc.sql("select createTime,dt,id,mark,month,msgId,sendTime,serviceNo,tagKey,tagVal,uuid,year,md5No1 from sampleAll" +
+        Dataset<Row> singleSampleDs = sc.sql("select sendTime,tagKey,tagVal,md5No1 from sampleAll" +
                 " where tagKey ='" + labelName + "' and hour(sendTime) between " + beginTm + " and " + endTm);
         singleSampleDs.registerTempTable(tagLabel+"sampleSingle");
-
-        //金额类别标签短信
-        Dataset<Row> amtSampleDs = sc.sql("select createTime,dt,id,mark,month,msgId,sendTime,serviceNo,tagKey,tagVal,uuid,year,md5No1 from sampleAll" +
-                " where tagKey in ('loan_amount','pay_amount','cc_bill_amount','payout_amount','payin_amount') and hour(sendTime) between " + beginTm + " and " + endTm);
-        amtSampleDs.registerTempTable(tagLabel+"sampleAmt");
-
-
-        /* CNT_ALL 全量短信总笔数 */
-        Dataset<Row> cnt_allDs = sc.sql("select md5No1 ,count(*) as "+tagLabel+"CNT_ALL from sampleAll group by md5No1");
-        totalDs = mergeDataSet(telDs,cnt_allDs);
-
-        /* CNT_ALL 非金融类短信总笔数 */
-        Dataset<Row> general_cnt_Ds = sc.sql("select md5No1 ,count(*) as "+tagLabel+"CNT_GEN from sampleAll" +
-                " where tagKey not in ('loan_amount','pay_amount','cc_bill_amount','payout_amount','payin_amount') group by md5No1");
-        totalDs = mergeDataSet(totalDs,general_cnt_Ds);
-
-        /* CNT 金融类短信总笔数 */
-        Dataset<Row> amt_cntDs = sc.sql("select md5No1 ,count(*) as "+tagLabel+"CNT_AMT from "+tagLabel+"sampleAmt group by md5No1");
-        totalDs = mergeDataSet(totalDs,amt_cntDs);
+//
+//        //金额类别标签短信
+//        Dataset<Row> amtSampleDs = sc.sql("select sendTime,tagKey,tagVal,md5No1 from sampleAll" +
+//                " where tagKey in ('loan_amount','pay_amount','cc_bill_amount','payout_amount','payin_amount') and hour(sendTime) between " + beginTm + " and " + endTm);
+//        amtSampleDs.registerTempTable(tagLabel+"sampleAmt");
+//
+//
+//        /* CNT_ALL 全量短信总笔数 */
+//        Dataset<Row> cnt_allDs = sc.sql("select md5No1 ,count(*) as "+tagLabel+"CNT_ALL from sampleAll group by md5No1");
+//        totalDs = mergeDataSet(telDs,cnt_allDs);
+//
+//        /* CNT_ALL 非金融类短信总笔数 */
+//        Dataset<Row> general_cnt_Ds = sc.sql("select md5No1 ,count(*) as "+tagLabel+"CNT_GEN from sampleAll" +
+//                " where tagKey not in ('loan_amount','pay_amount','cc_bill_amount','payout_amount','payin_amount') group by md5No1");
+//        totalDs = mergeDataSet(totalDs,general_cnt_Ds);
+//
+//        /* CNT 金融类短信总笔数 */
+//        Dataset<Row> amt_cntDs = sc.sql("select md5No1 ,count(*) as "+tagLabel+"CNT_AMT from "+tagLabel+"sampleAmt group by md5No1");
+//        totalDs = mergeDataSet(totalDs,amt_cntDs);
 
       //  totalDs =  mergeDataSet(telDs,cntDs);
         /* AMT	总金额
@@ -72,71 +72,42 @@ public class GyFintech {
         *
         *  */
 
-        Dataset<Row> amtDs = sc.sql("select md5No1,sum(tagVal) as "+tagLabel+"AMT from "+tagLabel+"sampleSingle group by md5No1");
-        totalDs = mergeDataSet(totalDs,amtDs);
+        Dataset<Row> baseVarDs = sc.sql("select md5No1," +
+                "count(tagVal) as "+tagLabel+"CNT," +
+                "sum(tagVal) as "+tagLabel+"AMT," +
+                "max(tagVal) as "+tagLabel+"MAX," +
+                "min(tagVal) as "+tagLabel+"MIN," +
+                "avg(tagVal) as "+tagLabel+"AVG," +
+                "variance(tagVal) as "+tagLabel+"VAR," +
+                "kurtosis(tagVal) as "+tagLabel+"KURT," +
+                "skewness(tagVal) as "+tagLabel+"SKEW," +
+                "percentile(tagVal,0.25) as "+tagLabel+"25Q," +
+                "percentile(tagVal,0.5) as "+tagLabel+"MED," +
+                "percentile(tagVal,0.75) as "+tagLabel+"75Q," +
+                "count(distinct(to_date(sendTime, 'yyyy-MM-dd'))) as "+tagLabel+"DAYS from "+tagLabel+"sampleSingle group by md5No1");
 
-        /* MAX	最大金额 */
-        Dataset<Row> maxDs = sc.sql("select md5No1,max(tagVal) as "+tagLabel+"MAX from "+tagLabel+"sampleSingle group by md5No1");
-        totalDs = mergeDataSet(totalDs,maxDs);
 
-        /* MIN	最小金额 */
-        Dataset<Row> minDs = sc.sql("select md5No1,min(tagVal) as "+tagLabel+"MIN from "+tagLabel+"sampleSingle group by md5No1");
-
-        totalDs = mergeDataSet(totalDs,minDs);
-
-        /* AVG	平均金额 */
-        Dataset<Row> avgDs = sc.sql("select md5No1,avg(tagVal) as "+tagLabel+"AVG from "+tagLabel+"sampleSingle group by md5No1");
-        totalDs = mergeDataSet(totalDs,avgDs);
-
-        /* VAR	方差金额 */
-        Dataset<Row> varDs = sc.sql("select md5No1,variance(tagVal) as "+tagLabel+"VAR  from "+tagLabel+"sampleSingle group by md5No1");
-        totalDs = mergeDataSet(totalDs,varDs);
-
-        /* KURT	峰度 */
-        Dataset<Row> kurtDs = sc.sql("select md5No1,kurtosis(tagVal) as "+tagLabel+"KURT from "+tagLabel+"sampleSingle group by md5No1");
-        totalDs = mergeDataSet(totalDs,kurtDs);
-
-        /* SKEW	偏度 */
-        Dataset<Row> skewDs = sc.sql("select md5No1,skewness(tagVal) as "+tagLabel+"SKEW from "+tagLabel+"sampleSingle group by md5No1");
-        totalDs = mergeDataSet(totalDs,skewDs);
-
-        /*  25Q	25分位 */
-        Dataset<Row> pct25Ds = sc.sql("select md5No1,percentile(tagVal,0.25) as "+tagLabel+"25Q from "+tagLabel+"sampleSingle group by md5No1");
-        totalDs = mergeDataSet(totalDs,pct25Ds);
-
-        /*  MED	中位数 */
-        Dataset<Row> pct50Ds = sc.sql("select md5No1,percentile(tagVal,0.5) as "+tagLabel+"MED from "+tagLabel+"sampleSingle group by md5No1");
-        totalDs = mergeDataSet(totalDs,pct50Ds);
-
-        /*  75Q	75分位 */
-        Dataset<Row> pct75Ds = sc.sql("select md5No1,percentile(tagVal,0.75) as "+tagLabel+"75Q from "+tagLabel+"sampleSingle group by md5No1");
-        totalDs = mergeDataSet(totalDs,pct75Ds);
-
-        /* DAYS	有流水的天数*/
-        Dataset<Row> daysDs = sc.sql("select md5No1,count(distinct(to_date(sendTime, 'yyyy-MM-dd'))) as "+tagLabel+"DAYS from "+tagLabel+"sampleSingle group by md5No1");
-        totalDs = mergeDataSet(totalDs,daysDs);
-
-        /* 500DAYS	金额大于500元的天数 */
-        Dataset<Row> days500Ds = amtDayCountsGreaterThan(sc,Double.valueOf(500),tagLabel+"500DAYS",tagLabel);
-        totalDs = mergeDataSet(totalDs,days500Ds);
-
-        /* 1000DAYS	金额大于1000元的天数 */
-        Dataset<Row> days1000Ds = amtDayCountsGreaterThan(sc,Double.valueOf(1000),tagLabel+"1000DAYS",tagLabel);
-        totalDs = mergeDataSet(totalDs,days1000Ds);
-
-        /* 3000DAYS	金额大于3000元的天数 */
-        Dataset<Row> days3000Ds = amtDayCountsGreaterThan(sc,Double.valueOf(3000),tagLabel+"3000DAYS",tagLabel);
-        totalDs = mergeDataSet(totalDs,days3000Ds);
-
-        /* 5000DAYS	金额大于5000元的天数 */
-        Dataset<Row> days5000Ds = amtDayCountsGreaterThan(sc,Double.valueOf(5000),tagLabel+"5000DAYS",tagLabel);
-        totalDs = mergeDataSet(totalDs,days5000Ds);
-
-        /* 1AMT	金额小于1元的数量 */
-        Dataset<Row> amt1Ds = countsAmtByCondition(sc,"< 1",tagLabel+"1AMT",tagLabel);
-
-        /* 2AMT	金额小于1元的金额 */
-        Dataset<Row> amt2Ds = sumAmtByCondition(sc, "< 1",tagLabel+"2AMT",tagLabel);
+//        /* 500DAYS	金额大于500元的天数 */
+//        Dataset<Row> days500Ds = amtDayCountsGreaterThan(sc,Double.valueOf(500),tagLabel+"500DAYS",tagLabel);
+//        totalDs = mergeDataSet(totalDs,days500Ds);
+//
+//        /* 1000DAYS	金额大于1000元的天数 */
+//        Dataset<Row> days1000Ds = amtDayCountsGreaterThan(sc,Double.valueOf(1000),tagLabel+"1000DAYS",tagLabel);
+//        totalDs = mergeDataSet(totalDs,days1000Ds);
+//
+//        /* 3000DAYS	金额大于3000元的天数 */
+//        Dataset<Row> days3000Ds = amtDayCountsGreaterThan(sc,Double.valueOf(3000),tagLabel+"3000DAYS",tagLabel);
+//        totalDs = mergeDataSet(totalDs,days3000Ds);
+//
+//        /* 5000DAYS	金额大于5000元的天数 */
+//        Dataset<Row> days5000Ds = amtDayCountsGreaterThan(sc,Double.valueOf(5000),tagLabel+"5000DAYS",tagLabel);
+//        totalDs = mergeDataSet(totalDs,days5000Ds);
+//
+//        /* 1AMT	金额小于1元的数量 */
+//        Dataset<Row> amt1Ds = countsAmtByCondition(sc,"< 1",tagLabel+"1AMT",tagLabel);
+//
+//        /* 2AMT	金额小于1元的金额 */
+//        Dataset<Row> amt2Ds = sumAmtByCondition(sc, "< 1",tagLabel+"2AMT",tagLabel);
 //
 //
 //
@@ -151,10 +122,10 @@ public class GyFintech {
 //        totalDs = mergeDataSet(totalDs,amt4Ds);
 
         /* 5AMT	金额大于10000元的数量 */
-        Dataset<Row> amt5Ds = countsAmtByCondition(sc,"> 10000",tagLabel+"5AMT",tagLabel);
-
-        /* 6AMT	金额大于10000元的金额 */
-        Dataset<Row> amt6Ds = sumAmtByCondition(sc, "> 10000",tagLabel+"6AMT",tagLabel);
+//        Dataset<Row> amt5Ds = countsAmtByCondition(sc,"> 10000",tagLabel+"5AMT",tagLabel);
+//
+//        /* 6AMT	金额大于10000元的金额 */
+//        Dataset<Row> amt6Ds = sumAmtByCondition(sc, "> 10000",tagLabel+"6AMT",tagLabel);
 
 //
 //        /* 7AMT	金额大于10000元的数量占比 */
@@ -170,8 +141,8 @@ public class GyFintech {
 //        totalDs = mergeDataSet(totalDs,amt8Ds);
 
 //        totalDs = totalDs.drop(totalDs.col("applicationDt")).drop(totalDs.col("mobile")).drop(totalDs.col("overdueDays"));
-
-        return totalDs;
+//        totalDs = mergeDataSet(totalDs,baseVarDs);
+        return baseVarDs;
 
 
 
