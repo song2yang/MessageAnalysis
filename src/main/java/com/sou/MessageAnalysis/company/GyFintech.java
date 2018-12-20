@@ -383,6 +383,7 @@ public class GyFintech {
                 try{
                     messageTag.setTagVal(Double.valueOf(msgTagInfo[6].replaceAll("\"","")));
                 }catch (Exception e){
+                    messageTag.setTagVal(0.0);
                     System.out.println(e.getMessage());
                     System.out.println(msgTag);
                 }
