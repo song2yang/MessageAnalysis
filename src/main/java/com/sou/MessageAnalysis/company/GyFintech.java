@@ -41,6 +41,7 @@ public class GyFintech {
         Dataset<Row> singleSampleDs = sc.sql("select sendTime,tagKey,tagVal,md5No1 from sampleAll" +
                 " where tagKey ='" + labelName + "' and hour(sendTime) between " + beginTm + " and " + endTm);
         singleSampleDs.registerTempTable(tagLabel+"sampleSingle");
+        sc.cacheTable(tagLabel+"sampleSingle");
 //
 //        //金额类别标签短信
 //        Dataset<Row> amtSampleDs = sc.sql("select sendTime,tagKey,tagVal,md5No1 from sampleAll" +
@@ -72,7 +73,7 @@ public class GyFintech {
         *
         *  */
 
-        Dataset<Row> baseVarDs = sc.sql("select md5No1," +
+        Dataset<Row> baseVarDs = sc.sql("select md5No1 as md5No," +
                 "count(tagVal) as "+tagLabel+"CNT," +
                 "sum(tagVal) as "+tagLabel+"AMT," +
                 "max(tagVal) as "+tagLabel+"MAX," +
@@ -87,6 +88,13 @@ public class GyFintech {
                 "count(distinct(to_date(sendTime, 'yyyy-MM-dd'))) as "+tagLabel+"DAYS from "+tagLabel+"sampleSingle group by md5No1");
 
 
+        totalDs = mergeDataSet(baseVarDs,sc.sql("select md5No1,count(tagVal) as "+tagLabel+"_100CNT from "+tagLabel+"sampleSingle where tagVal > 100 group by md5No1"));
+        totalDs = mergeDataSet(totalDs,sc.sql("select md5No1,count(tagVal) as "+tagLabel+"_500CNT from "+tagLabel+"sampleSingle where tagVal > 500 group by md5No1"));
+        totalDs = mergeDataSet(totalDs,sc.sql("select md5No1,count(tagVal) as "+tagLabel+"_1000CNT from "+tagLabel+"sampleSingle where tagVal > 1000 group by md5No1"));
+        totalDs = mergeDataSet(totalDs,sc.sql("select md5No1,count(tagVal) as "+tagLabel+"_2000CNT from "+tagLabel+"sampleSingle where tagVal > 2000 group by md5No1"));
+        totalDs = mergeDataSet(totalDs,sc.sql("select md5No1,count(tagVal) as "+tagLabel+"_5000CNT from "+tagLabel+"sampleSingle where tagVal > 5000 group by md5No1"));
+        totalDs = mergeDataSet(totalDs,sc.sql("select md5No1,count(tagVal) as "+tagLabel+"_10000CNT from "+tagLabel+"sampleSingle where tagVal > 10000 group by md5No1"));
+        totalDs = mergeDataSet(totalDs,sc.sql("select md5No1,count(tagVal) as "+tagLabel+"_50000CNT from "+tagLabel+"sampleSingle  where tagVal > 50000 group by md5No1"));
 //        /* 500DAYS	金额大于500元的天数 */
 //        Dataset<Row> days500Ds = amtDayCountsGreaterThan(sc,Double.valueOf(500),tagLabel+"500DAYS",tagLabel);
 //        totalDs = mergeDataSet(totalDs,days500Ds);
@@ -142,7 +150,9 @@ public class GyFintech {
 
 //        totalDs = totalDs.drop(totalDs.col("applicationDt")).drop(totalDs.col("mobile")).drop(totalDs.col("overdueDays"));
 //        totalDs = mergeDataSet(totalDs,baseVarDs);
-        return baseVarDs;
+
+        sc.uncacheTable(tagLabel+"sampleSingle");
+        return totalDs;
 
 
 

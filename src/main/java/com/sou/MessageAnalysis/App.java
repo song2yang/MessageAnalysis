@@ -20,7 +20,7 @@ import java.util.List;
 public class App {
     private static Logger logger = Logger.getLogger(App.class);
 
-    private static String profile = "pro";
+    private static String profile = "dev";
     private static final String fileType = "DE";
     private static String sparkMaster;
     private static String hdfsHost;
@@ -93,6 +93,8 @@ public class App {
         Dataset<Row> sampleTagDs = telDs.join(msgTagDs, msgTagDs.col("telMd5").equalTo(telDs.col("md5No")));
         sampleTagDs.registerTempTable("sampleTagTemp");
 
+        sc.cacheTable("sampleTagTemp");
+
         sampleTagDs.cache();
 
         for (Integer day:days) {
@@ -101,14 +103,16 @@ public class App {
             Dataset<Row> allSampleDs = sc.sql("select sendTime,tagKey,tagVal,md5No as md5No1" +
                     ",datediff(to_date('"+applicationDt+"'),to_date(sendTime)) as dateDiff from sampleTagTemp where datediff(to_date('"+applicationDt+"'),to_date(sendTime)) between 0 and "+ day);
             allSampleDs.registerTempTable("sampleAll");
-            allSampleDs.repartition(1).write().option("header",true).csv("hdfs://10.0.1.95:9000/result/DE/"+day+"_allSampleDs");
+//            allSampleDs.repartition(1).write().option("header",true).csv("hdfs://10.0.1.95:9000/result/DE/"+day+"_allSampleDs");
+            sc.cacheTable("sampleAll");
 
-            allSampleDs.cache();
             for (String lable:labels){
                 Dataset<Row> ds = GyFintech.derivedVarsByCondition(jsc, sc, hdfsHost, gySourcePath, telDs, day, applicationDt, 0, 24, lable);
                 ds.repartition(1).write().option("header",true).csv("hdfs://10.0.1.95:9000/result/DE/"+day+"_"+lable);
 //                ds.show();
             }
+
+            sc.uncacheTable("sampleAll");
 
         }
 
