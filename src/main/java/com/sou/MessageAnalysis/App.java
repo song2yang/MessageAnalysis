@@ -19,7 +19,7 @@ import java.util.List;
 public class App {
     private static Logger logger = Logger.getLogger(App.class);
 
-    private static String profile = "dev";
+    private static String profile = "pro";
     private static final String fileType = "DE";
     private static String sparkMaster;
     private static String hdfsHost;
@@ -51,17 +51,17 @@ public class App {
 //        GyFintech.msgStatistics(jsc,sc,hdfsHost,gySourcePath,logger);
 
         String condition = "";
-        Integer[] days = new Integer[10];
+        Integer[] days = new Integer[2];
         days[0] = 7;
-        days[1] = 30;
-        days[2] = 60;
-        days[3] = 90;
-        days[4] = 120;
-        days[5] = 150;
-        days[6] = 180;
-        days[7] = 270;
-        days[8] = 360;
-        days[9] = 720;
+        days[1] = 360;
+//        days[2] = 60;
+//        days[3] = 90;
+//        days[4] = 120;
+//        days[5] = 150;
+//        days[6] = 180;
+//        days[7] = 270;
+//        days[8] = 360;
+//        days[9] = 720;
 
         String[] labels = new String[5];
         labels[0] = "loan_amount";
@@ -100,6 +100,8 @@ public class App {
             Dataset<Row> allSampleDs = sc.sql("select sendTime,tagKey,tagVal,md5No as md5No1" +
                     ",datediff(to_date('"+applicationDt+"'),to_date(sendTime)) as dateDiff from sampleTagTemp where datediff(to_date('"+applicationDt+"'),to_date(sendTime)) between 0 and "+ day);
             allSampleDs.registerTempTable("sampleAll");
+
+            allSampleDs.repartition(1).write().option("header",true).csv("hdfs://10.0.1.95:9000/result/DE/"+day+"_allSampleDs");
 
             allSampleDs.cache();
             for (String lable:labels){
