@@ -20,7 +20,7 @@ import java.util.List;
 public class App {
     private static Logger logger = Logger.getLogger(App.class);
 
-    private static String profile = "pro";
+    private static String profile = "dev";
     private static final String fileType = "DE";
     private static String sparkMaster;
     private static String hdfsHost;
@@ -49,9 +49,9 @@ public class App {
 
         SQLContext sc = new SQLContext(jsc);
 
+
 //        GyFintech.msgStatistics(jsc,sc,hdfsHost,gySourcePath,logger);
 
-        String condition = "";
         Integer[] days = new Integer[2];
         days[0] = 7;
         days[1] = 360;
@@ -99,6 +99,7 @@ public class App {
         sampleTagDs.cache();
 
         Dataset<Row> totalDs = null;
+        List<String> paths = new ArrayList<>();
 
         for (Integer day:days) {
 
@@ -118,13 +119,25 @@ public class App {
 //                }
 
 //                ds.show();
-                ds.repartition(1).write().option("header",true).csv("hdfs://10.0.1.95:9000/result/DE/"+lable+"_"+day);
+                ds.repartition(1).write().option("header",true).csv(hdfsHost+"/result/DE/"+lable+"_"+day);
+                paths.add("/result/DE/"+lable+"_"+day);
             }
             sc.uncacheTable("sampleAll");
 
         }
 
 
+
+        for (String path:paths) {
+            Dataset<Row> ds = sc.sparkSession().read().option("header",true).csv(hdfsHost+path);
+            if (null == totalDs){
+                totalDs = telDs.join(ds,telDs.col("md5No").equalTo(ds.col("md5No")),"left_join").drop(ds.col("md5No"));
+            }else {
+                totalDs = totalDs.join(ds,totalDs.col("md5No").equalTo(telDs.col("md5No")),"left_outer").drop(ds.col("md5No"));
+            }
+        }
+
+        totalDs.repartition(1).write().option("header",true).csv(hdfsHost+"/result/DE/totalDs");
 
         
 
