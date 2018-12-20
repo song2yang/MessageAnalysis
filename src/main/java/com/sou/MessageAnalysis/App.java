@@ -43,7 +43,7 @@ public class App {
 
     public static void main(String[] args) {
 
-        SparkConf conf = new SparkConf().setAppName("MessageAnalyse").setMaster(sparkMaster);
+        SparkConf conf = new SparkConf().setAppName("MessageAnalyse").setMaster(sparkMaster).set("spark.sql.crossJoin.enabled","true");
 
         JavaSparkContext jsc = new JavaSparkContext(conf);
 
@@ -78,14 +78,15 @@ public class App {
 
         //样本手机号码md5文件（15873222574     BA1674B46C363EFFD6D8B0153699F164）
         // 大额 CJM_1129_DE 小额 CJM_1129_XE
-        Dataset<Row> telDs = GyFintech.getTelRdd(jsc, sc, hdfsHost, gySourcePath,"CJM_1129_"+fileType+".txt").distinct();
-//        Dataset<Row> telDs = GyFintech.getTelRdd(jsc, sc, hdfsHost, gySourcePath,"CJM_1129_DE_single.txt").distinct();
+//        Dataset<Row> telDs = GyFintech.getTelRdd(jsc, sc, hdfsHost, gySourcePath,"CJM_1129_"+fileType+".txt").distinct();
+        Dataset<Row> telDs = GyFintech.getTelRdd(jsc, sc, hdfsHost, gySourcePath,"CJM_1129_DE_single.txt").distinct();
 //        telDs = telDs.drop(telDs.col("originalNo"));
 
+        telDs.cache();
 
 
-        Dataset<Row> msgTagDs = GyFintech.getMsgTagRdd(jsc, sc, hdfsHost, gySourcePath,"zz_tag_"+fileType+".csv").distinct();
-//        Dataset<Row> msgTagDs = GyFintech.getMsgTagRdd(jsc, sc, hdfsHost, gySourcePath,"singleTel_teg.csv").distinct();
+//        Dataset<Row> msgTagDs = GyFintech.getMsgTagRdd(jsc, sc, hdfsHost, gySourcePath,"zz_tag_"+fileType+".csv").distinct();
+        Dataset<Row> msgTagDs = GyFintech.getMsgTagRdd(jsc, sc, hdfsHost, gySourcePath,"singleTel_teg.csv").distinct();
         msgTagDs.registerTempTable("msgTag");
 
 
@@ -96,6 +97,8 @@ public class App {
         sc.cacheTable("sampleTagTemp");
 
         sampleTagDs.cache();
+
+        Dataset<Row> totalDs = null;
 
         for (Integer day:days) {
 
@@ -108,13 +111,20 @@ public class App {
 
             for (String lable:labels){
                 Dataset<Row> ds = GyFintech.derivedVarsByCondition(jsc, sc, hdfsHost, gySourcePath, telDs, day, applicationDt, 0, 24, lable);
-                ds.repartition(1).write().option("header",true).csv("hdfs://10.0.1.95:9000/result/DE/"+day+"_"+lable);
+                if (totalDs == null){
+                    totalDs = telDs.join(ds,telDs.col("md5No").equalTo(ds.col("md5No")),"left_outer").drop(ds.col("md5No"));
+                }else {
+                    totalDs = totalDs.join(ds,totalDs.col("md5No").equalTo(telDs.col("md5No")),"left_outer").drop(ds.col("md5No"));
+                }
+
 //                ds.show();
             }
 
             sc.uncacheTable("sampleAll");
 
         }
+
+        totalDs.repartition(1).write().option("header",true).csv("hdfs://10.0.1.95:9000/result/DE/totalDs");
 
         
 

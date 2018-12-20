@@ -88,13 +88,13 @@ public class GyFintech {
                 "count(distinct(to_date(sendTime, 'yyyy-MM-dd'))) as "+tagLabel+"DAYS from "+tagLabel+"sampleSingle group by md5No1");
 
 
-        totalDs = mergeDataSet(baseVarDs,sc.sql("select md5No1,count(tagVal) as "+tagLabel+"_100CNT from "+tagLabel+"sampleSingle where tagVal > 100 group by md5No1"));
-        totalDs = mergeDataSet(totalDs,sc.sql("select md5No1,count(tagVal) as "+tagLabel+"_500CNT from "+tagLabel+"sampleSingle where tagVal > 500 group by md5No1"));
-        totalDs = mergeDataSet(totalDs,sc.sql("select md5No1,count(tagVal) as "+tagLabel+"_1000CNT from "+tagLabel+"sampleSingle where tagVal > 1000 group by md5No1"));
-        totalDs = mergeDataSet(totalDs,sc.sql("select md5No1,count(tagVal) as "+tagLabel+"_2000CNT from "+tagLabel+"sampleSingle where tagVal > 2000 group by md5No1"));
-        totalDs = mergeDataSet(totalDs,sc.sql("select md5No1,count(tagVal) as "+tagLabel+"_5000CNT from "+tagLabel+"sampleSingle where tagVal > 5000 group by md5No1"));
-        totalDs = mergeDataSet(totalDs,sc.sql("select md5No1,count(tagVal) as "+tagLabel+"_10000CNT from "+tagLabel+"sampleSingle where tagVal > 10000 group by md5No1"));
-        totalDs = mergeDataSet(totalDs,sc.sql("select md5No1,count(tagVal) as "+tagLabel+"_50000CNT from "+tagLabel+"sampleSingle  where tagVal > 50000 group by md5No1"));
+        totalDs = mergeDataSet(baseVarDs,sc.sql("select md5No1,count(tagVal) as "+tagLabel+"100CNT from "+tagLabel+"sampleSingle where tagVal > 100 group by md5No1"));
+        totalDs = mergeDataSet(totalDs,sc.sql("select md5No1,count(tagVal) as "+tagLabel+"500CNT from "+tagLabel+"sampleSingle where tagVal > 500 group by md5No1"));
+        totalDs = mergeDataSet(totalDs,sc.sql("select md5No1,count(tagVal) as "+tagLabel+"1000CNT from "+tagLabel+"sampleSingle where tagVal > 1000 group by md5No1"));
+        totalDs = mergeDataSet(totalDs,sc.sql("select md5No1,count(tagVal) as "+tagLabel+"2000CNT from "+tagLabel+"sampleSingle where tagVal > 2000 group by md5No1"));
+        totalDs = mergeDataSet(totalDs,sc.sql("select md5No1,count(tagVal) as "+tagLabel+"5000CNT from "+tagLabel+"sampleSingle where tagVal > 5000 group by md5No1"));
+        totalDs = mergeDataSet(totalDs,sc.sql("select md5No1,count(tagVal) as "+tagLabel+"10000CNT from "+tagLabel+"sampleSingle where tagVal > 10000 group by md5No1"));
+        totalDs = mergeDataSet(totalDs,sc.sql("select md5No1,count(tagVal) as "+tagLabel+"50000CNT from "+tagLabel+"sampleSingle  where tagVal > 50000 group by md5No1"));
 //        /* 500DAYS	金额大于500元的天数 */
 //        Dataset<Row> days500Ds = amtDayCountsGreaterThan(sc,Double.valueOf(500),tagLabel+"500DAYS",tagLabel);
 //        totalDs = mergeDataSet(totalDs,days500Ds);
