@@ -20,7 +20,7 @@ import java.util.List;
 public class App {
     private static Logger logger = Logger.getLogger(App.class);
 
-    private static String profile = "dev";
+    private static String profile = "pro";
     private static final String fileType = "DE";
     private static String sparkMaster;
     private static String hdfsHost;
@@ -84,7 +84,33 @@ public class App {
 
         telDs.cache();
 
+        Dataset<Row> totalDs = null;
+        List<String> paths = new ArrayList<>();
+        paths.add("/result/DE/cc_bill_amount_360");
+        paths.add("/result/DE/cc_bill_amount_7");
+        paths.add("/result/DE/loan_amount_360");
+        paths.add("/result/DE/loan_amount_7");
+        paths.add("/result/DE/pay_amount_360");
+        paths.add("/result/DE/pay_amount_7");
+        paths.add("/result/DE/payin_amount_360");
+        paths.add("/result/DE/payin_amount_7");
+        paths.add("/result/DE/payout_amount_360");
+//        paths.add("/result/DE/payout_amount_7");
 
+        for (String path:paths) {
+            Dataset<Row> ds = sc.sparkSession().read().option("header",true).csv(hdfsHost+path);
+            ds.show();
+            if (null == totalDs){
+                totalDs = telDs.join(ds,telDs.col("md5No").equalTo(ds.col("md5No")),"left_outer").drop(ds.col("md5No"));
+            }else {
+                totalDs = totalDs.join(ds,totalDs.col("md5No").equalTo(telDs.col("md5No")),"left_outer").drop(ds.col("md5No"));
+            }
+        }
+
+        totalDs.repartition(1).write().option("header",true).csv("/opt/test/totalDs");
+
+
+        System.exit(1);
         Dataset<Row> msgTagDs = GyFintech.getMsgTagRdd(jsc, sc, hdfsHost, gySourcePath,"zz_tag_"+fileType+".csv").distinct();
    //     Dataset<Row> msgTagDs = GyFintech.getMsgTagRdd(jsc, sc, hdfsHost, gySourcePath,"singleTel_teg.csv").distinct();
         msgTagDs.registerTempTable("msgTag");
@@ -98,8 +124,7 @@ public class App {
 
         sampleTagDs.cache();
 
-        Dataset<Row> totalDs = null;
-        List<String> paths = new ArrayList<>();
+
 
         for (Integer day:days) {
 
@@ -128,16 +153,7 @@ public class App {
 
 
 
-        for (String path:paths) {
-            Dataset<Row> ds = sc.sparkSession().read().option("header",true).csv(hdfsHost+path);
-            if (null == totalDs){
-                totalDs = telDs.join(ds,telDs.col("md5No").equalTo(ds.col("md5No")),"left_join").drop(ds.col("md5No"));
-            }else {
-                totalDs = totalDs.join(ds,totalDs.col("md5No").equalTo(telDs.col("md5No")),"left_outer").drop(ds.col("md5No"));
-            }
-        }
 
-        totalDs.repartition(1).write().option("header",true).csv(hdfsHost+"/result/DE/totalDs");
 
         
 
