@@ -7,6 +7,7 @@ import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.sql.*;
+import util.HdfsUtil;
 import util.PropertiesUtil;
 
 import javax.xml.crypto.Data;
@@ -100,7 +101,6 @@ public class App {
             Dataset<Row> allSampleDs = sc.sql("select sendTime,tagKey,tagVal,md5No as md5No1" +
                     ",datediff(to_date('"+applicationDt+"'),to_date(sendTime)) as dateDiff from sampleTagTemp where datediff(to_date('"+applicationDt+"'),to_date(sendTime)) between 0 and "+ day);
             allSampleDs.registerTempTable("sampleAll");
-
             allSampleDs.repartition(1).write().option("header",true).csv("hdfs://10.0.1.95:9000/result/DE/"+day+"_allSampleDs");
 
             allSampleDs.cache();

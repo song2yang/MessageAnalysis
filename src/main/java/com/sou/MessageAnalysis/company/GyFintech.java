@@ -370,7 +370,12 @@ public class GyFintech {
 //                messageTag.setServiceNo(msgTagInfo[3].replaceAll("\"",""));
 //                messageTag.setMark(msgTagInfo[4].replaceAll("\"",""));
                 messageTag.setTagKey(msgTagInfo[5].replaceAll("\"",""));
-                messageTag.setTagVal(Double.valueOf(msgTagInfo[6].replaceAll("\"","")));
+                try{
+                    messageTag.setTagVal(Double.valueOf(msgTagInfo[6].replaceAll("\"","")));
+                }catch (Exception e){
+                    System.out.println(e.getMessage());
+                    System.out.println(msgTag);
+                }
 //                messageTag.setYear(msgTagInfo[7].replaceAll("\"",""));
 //                messageTag.setMonth(msgTagInfo[8].replaceAll("\"",""));
 //                messageTag.setDt(msgTagInfo[9].replaceAll("\"",""));
