@@ -52,9 +52,9 @@ public class App {
 
 //        GyFintech.msgStatistics(jsc,sc,hdfsHost,gySourcePath,logger);
 
-        Integer[] days = new Integer[2];
+        Integer[] days = new Integer[1];
 //        days[0] = 7;
-        days[1] = 360;
+        days[0] = 360;
 //        days[2] = 60;
 //        days[3] = 90;
 //        days[4] = 120;
@@ -114,13 +114,13 @@ public class App {
             for (String lable:labels){
                 Dataset<Row> ds = GyFintech.derivedVarsByCondition(jsc, sc, hdfsHost, gySourcePath, telDs, day, applicationDt, 0, 24, lable);
                 ds.repartition(1).write().option("header",true).csv(hdfsHost+"/result/DE/"+lable+"_"+day);
-                paths.add("/result/DE/"+lable+"_"+day);
+                paths.add(hdfsHost+"/result/DE/"+lable+"_"+day);
             }
             sc.uncacheTable("sampleAll");
 
         }
 
-        GyFintech.mergeFile(paths,sc,hdfsHost+"/result/temp/");
+        GyFintech.mergeFile(paths,sc,hdfsHost+"result/temp/");
 
 
 

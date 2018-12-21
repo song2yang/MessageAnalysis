@@ -177,7 +177,7 @@ public class GyFintech {
 
             return mergeFile(newPaths,sc,tempFilePath);
         }else if(paths.size() == 1){
-            sc.sparkSession().read().option("header",true).csv(paths.get(0)).write().option("header",true).csv("/result/DE/totalDs");
+            sc.sparkSession().read().option("header",true).csv(paths.get(0)).write().option("header",true).csv("hdfs://10.0.1.95:9000/result/DE/totalDs");
             return paths.get(0);
         }else {
             newPaths = new ArrayList<>();
