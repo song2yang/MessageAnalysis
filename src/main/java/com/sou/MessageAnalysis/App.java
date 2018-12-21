@@ -20,7 +20,7 @@ import java.util.List;
 public class App {
     private static Logger logger = Logger.getLogger(App.class);
 
-    private static String profile = "dev";
+    private static String profile = "pro";
     private static final String fileType = "DE";
     private static String sparkMaster;
     private static String hdfsHost;
@@ -52,17 +52,17 @@ public class App {
 
 //        GyFintech.msgStatistics(jsc,sc,hdfsHost,gySourcePath,logger);
 
-        Integer[] days = new Integer[1];
-//        days[0] = 7;
-        days[0] = 360;
-//        days[2] = 60;
-//        days[3] = 90;
-//        days[4] = 120;
-//        days[5] = 150;
-//        days[6] = 180;
-//        days[7] = 270;
-//        days[8] = 360;
-//        days[9] = 720;
+        Integer[] days = new Integer[10];
+        days[0] = 7;
+        days[1] = 30;
+        days[2] = 60;
+        days[3] = 90;
+        days[4] = 120;
+        days[5] = 150;
+        days[6] = 180;
+        days[7] = 270;
+        days[8] = 360;
+        days[9] = 720;
 
         String[] labels = new String[5];
         labels[0] = "loan_amount";
@@ -100,12 +100,9 @@ public class App {
    //     Dataset<Row> msgTagDs = GyFintech.getMsgTagRdd(jsc, sc, hdfsHost, gySourcePath,"singleTel_teg.csv").distinct();
         msgTagDs.registerTempTable("msgTag");
 
-        System.out.println(msgTagDs.count());
-        System.exit(1);
-
 
         // 样本手机号码+短息标签临时表
-        Dataset<Row> sampleTagDs = telDs.join(msgTagDs, msgTagDs.col("telMd5").equalTo(telDs.col("md5No")));
+        Dataset<Row> sampleTagDs = sampleTelDs.join(msgTagDs, msgTagDs.col("telMd5").equalTo(sampleTelDs.col("md5No")));
         sampleTagDs.registerTempTable("sampleTagTemp");
 
         sc.cacheTable("sampleTagTemp");
@@ -125,6 +122,7 @@ public class App {
 
             for (String lable:labels){
                 Dataset<Row> ds = GyFintech.derivedVarsByCondition(jsc, sc, hdfsHost, gySourcePath, telDs, day, applicationDt, 0, 24, lable);
+                ds = ds.dropDuplicates();
                 ds.repartition(1).write().option("header",true).csv(hdfsHost+"/result/DE/"+lable+"_"+day);
                 paths.add(hdfsHost+"/result/DE/"+lable+"_"+day);
             }
