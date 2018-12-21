@@ -20,7 +20,7 @@ import java.util.List;
 public class App {
     private static Logger logger = Logger.getLogger(App.class);
 
-    private static String profile = "pro";
+    private static String profile = "dev";
     private static final String fileType = "DE";
     private static String sparkMaster;
     private static String hdfsHost;
@@ -84,12 +84,24 @@ public class App {
 
         telDs.cache();
 
+
+        //样本原始文件（15961768685,2018/8/7,0）
+        // 大额 YB_DE 小额 YB_XE
+        Dataset<Row> sampleDs = GyFintech.getSampleRdd(jsc, sc, hdfsHost, gySourcePath, "YB_"+fileType+".csv").distinct();
+
+        Dataset<Row> sampleTelDs = sampleDs.join(telDs, sampleDs.col("mobile").equalTo(telDs.col("originalNo"))).distinct();
+        sampleTelDs = sampleTelDs.drop(sampleTelDs.col("originalNo")).drop(sampleTelDs.col("mobile"));
+
+
         List<String> paths = new ArrayList<>();
 
 
-        Dataset<Row> msgTagDs = GyFintech.getMsgTagRdd(jsc, sc, hdfsHost, gySourcePath,"zz_tag_"+fileType+".csv").distinct();
+        Dataset<Row> msgTagDs = GyFintech.getMsgTagRdd(jsc, sc, hdfsHost, gySourcePath,"zz_tag_"+fileType+".csv");
    //     Dataset<Row> msgTagDs = GyFintech.getMsgTagRdd(jsc, sc, hdfsHost, gySourcePath,"singleTel_teg.csv").distinct();
         msgTagDs.registerTempTable("msgTag");
+
+        System.out.println(msgTagDs.count());
+        System.exit(1);
 
 
         // 样本手机号码+短息标签临时表

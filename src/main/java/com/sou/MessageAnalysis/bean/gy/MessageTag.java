@@ -2,7 +2,7 @@ package com.sou.MessageAnalysis.bean.gy;
 
 public class MessageTag {
     //标签主键
-//    private String id;
+    private String id;
     // 短信UUID
 //    private String uuid;
     // 加密手机号
@@ -37,6 +37,14 @@ public class MessageTag {
     // 短信标识，同一短信一致
 //    private String msgId;
 
+
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
 
     public String getTelMd5() {
         return telMd5;
