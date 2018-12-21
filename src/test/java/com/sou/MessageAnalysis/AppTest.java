@@ -33,7 +33,7 @@ public class AppTest
 
 
             List<String> paths = new ArrayList<>();
-            paths.add("/Users/souyouyou/Desktop/cloud/DE/cc_bill_amount_360");
+            paths.add("/result/DE/cc_bill_amount_360");
             paths.add("/Users/souyouyou/Desktop/cloud/DE/cc_bill_amount_7");
             paths.add("/Users/souyouyou/Desktop/cloud/DE/loan_amount_360");
             paths.add("/Users/souyouyou/Desktop/cloud/DE/loan_amount_7");

@@ -413,7 +413,7 @@ public class GyFintech {
                 MessageTag messageTag = new MessageTag();
                 String[] msgTagInfo = msgTag.split(",");
 
-//                messageTag.setId(msgTagInfo[0].replaceAll("\"",""));
+                messageTag.setId(msgTagInfo[0].replaceAll("\"",""));
 //                messageTag.setUuid(msgTagInfo[1].replaceAll("\"",""));
                 messageTag.setTelMd5(msgTagInfo[2].replaceAll("\"",""));
 //                messageTag.setServiceNo(msgTagInfo[3].replaceAll("\"",""));
@@ -423,8 +423,8 @@ public class GyFintech {
                     messageTag.setTagVal(Double.valueOf(msgTagInfo[6].replaceAll("\"","")));
                 }catch (Exception e){
                     messageTag.setTagVal(0.0);
-                    System.out.println(e.getMessage());
-                    System.out.println(msgTag);
+//                    System.out.println(e.getMessage());
+//                    System.out.println(msgTag);
                 }
 //                messageTag.setYear(msgTagInfo[7].replaceAll("\"",""));
 //                messageTag.setMonth(msgTagInfo[8].replaceAll("\"",""));
@@ -457,7 +457,7 @@ public class GyFintech {
      * @param fileName
      * @return
      */
-    private static Dataset<Row> getSampleRdd(JavaSparkContext jsc,SQLContext sc,String hdfsHost,String sourcePath,String fileName){
+    public static Dataset<Row> getSampleRdd(JavaSparkContext jsc,SQLContext sc,String hdfsHost,String sourcePath,String fileName){
         JavaRDD<String> lines = jsc.textFile(hdfsHost+sourcePath + fileName);
 
         JavaRDD<Object> sampleRdd = lines.map(new Function<String, Object>() {
