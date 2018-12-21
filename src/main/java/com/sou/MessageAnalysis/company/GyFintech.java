@@ -15,6 +15,8 @@ import util.HdfsUtil;
 
 import javax.swing.plaf.synth.SynthTextAreaUI;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.List;
 
 public class GyFintech {
     private static Logger logger = Logger.getLogger(GyFintech.class);
@@ -158,7 +160,44 @@ public class GyFintech {
 
     }
 
-    protected static void insert2Db(Dataset<Row> ds){
+    public static String mergeFile(List<String> paths, SQLContext sc,String tempFilePath){
+
+        List<String> newPaths ;
+
+        if (paths.size()%2 == 0){
+            newPaths = new ArrayList<>();
+            for (int i = 0; i < paths.size(); i=i+2) {
+                Dataset<Row> ds1 = sc.sparkSession().read().option("header",true).csv(paths.get(i));
+                Dataset<Row> ds2 = sc.sparkSession().read().option("header",true).csv(paths.get(i+1));
+                String tempFilename = String.valueOf(System.currentTimeMillis());
+                ds1.join(ds2,ds1.col("md5No").equalTo(ds2.col("md5No")),"left_outer").drop(ds2.col("md5No"))
+                        .repartition(1).write().option("header",true).csv(tempFilePath+tempFilename);
+                newPaths.add(tempFilePath+tempFilename);
+            }
+
+            return mergeFile(newPaths,sc,tempFilePath);
+        }else if(paths.size() == 1){
+            sc.sparkSession().read().option("header",true).csv(paths.get(0)).write().option("header",true).csv("/result/DE/totalDs");
+            return paths.get(0);
+        }else {
+            newPaths = new ArrayList<>();
+            for (int i = 0; i < paths.size()-1; i=i+2) {
+                Dataset<Row> ds1 = sc.sparkSession().read().option("header",true).csv(paths.get(i));
+                Dataset<Row> ds2 = sc.sparkSession().read().option("header",true).csv(paths.get(i+1));
+                String tempFilename = String.valueOf(System.currentTimeMillis());
+                ds1.join(ds2,ds1.col("md5No").equalTo(ds2.col("md5No")),"left_outer").drop(ds2.col("md5No"))
+                        .repartition(1).write().option("header",true).csv(tempFilePath+tempFilename);
+                newPaths.add(tempFilePath+tempFilename);
+
+                if (i+3==paths.size()){
+                    newPaths.add(paths.get(paths.size()-1));
+                }
+            }
+
+            return mergeFile(newPaths,sc,tempFilePath);
+        }
+
+
     }
 
     protected static Dataset<Row> mergeDataSet(Dataset<Row> ds1,Dataset<Row> ds2){

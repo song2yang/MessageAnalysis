@@ -14,6 +14,8 @@ import org.apache.spark.sql.SQLContext;
 import util.HdfsUtil;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 
 /**
@@ -21,21 +23,37 @@ import java.io.IOException;
  */
 public class AppTest
     {
+        static String hdfsHost = "hdfs://10.0.1.95:9000/";
         public static void main(String[] args) {
+            SparkConf conf = new SparkConf().setAppName("MessageAnalyse").setMaster("local").set("spark.sql.crossJoin.enabled","true");
 
-            String msg = "\"91810\"," + //特服号
-                    "\"5232E572256E8A3902B367EF50C518F0\"," + //md5
-                    "\"2016-12-28 07:12:42\"," + //submitTime
-                    "\"1,100元扣款失败，请用app或微信号主动还款。如有疑问，可微信、APP或者10101058电话咨询人工客服确认情况。如已还款，请忽略本通知。\"," + //content
-                    "\"20180112000233316514\"," + // sid
-                    "\"100005776442925\""; //id
+            JavaSparkContext jsc = new JavaSparkContext(conf);
+
+            SQLContext sc = new SQLContext(jsc);
 
 
-
+            List<String> paths = new ArrayList<>();
+            paths.add("/Users/souyouyou/Desktop/cloud/DE/cc_bill_amount_360");
+            paths.add("/Users/souyouyou/Desktop/cloud/DE/cc_bill_amount_7");
+            paths.add("/Users/souyouyou/Desktop/cloud/DE/loan_amount_360");
+            paths.add("/Users/souyouyou/Desktop/cloud/DE/loan_amount_7");
+            paths.add("/Users/souyouyou/Desktop/cloud/DE/pay_amount_360");
+            paths.add("/Users/souyouyou/Desktop/cloud/DE/pay_amount_7");
+            paths.add("/Users/souyouyou/Desktop/cloud/DE/payin_amount_360");
+            paths.add("/Users/souyouyou/Desktop/cloud/DE/payin_amount_7");
+            paths.add("/Users/souyouyou/Desktop/cloud/DE/payout_amount_360");
+//            paths.add("/Users/souyouyou/Desktop/cloud/DE/payout_amount_7");
+//            System.out.println("FINAL"+mergeFile(paths,sc));;
         }
 
-        public static void splitMsg(){
 
-        }
+
+
+
+
+        
+
+
+
 
 }

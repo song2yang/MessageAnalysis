@@ -53,7 +53,7 @@ public class App {
 //        GyFintech.msgStatistics(jsc,sc,hdfsHost,gySourcePath,logger);
 
         Integer[] days = new Integer[2];
-        days[0] = 7;
+//        days[0] = 7;
         days[1] = 360;
 //        days[2] = 60;
 //        days[3] = 90;
@@ -84,33 +84,9 @@ public class App {
 
         telDs.cache();
 
-        Dataset<Row> totalDs = null;
         List<String> paths = new ArrayList<>();
-        paths.add("/result/DE/cc_bill_amount_360");
-        paths.add("/result/DE/cc_bill_amount_7");
-        paths.add("/result/DE/loan_amount_360");
-        paths.add("/result/DE/loan_amount_7");
-        paths.add("/result/DE/pay_amount_360");
-        paths.add("/result/DE/pay_amount_7");
-        paths.add("/result/DE/payin_amount_360");
-        paths.add("/result/DE/payin_amount_7");
-        paths.add("/result/DE/payout_amount_360");
-//        paths.add("/result/DE/payout_amount_7");
-
-        for (String path:paths) {
-            Dataset<Row> ds = sc.sparkSession().read().option("header",true).csv(hdfsHost+path);
-            ds.show();
-            if (null == totalDs){
-                totalDs = telDs.join(ds,telDs.col("md5No").equalTo(ds.col("md5No")),"left_outer").drop(ds.col("md5No"));
-            }else {
-                totalDs = totalDs.join(ds,totalDs.col("md5No").equalTo(telDs.col("md5No")),"left_outer").drop(ds.col("md5No"));
-            }
-        }
-
-        totalDs.repartition(1).write().option("header",true).csv("/opt/test/totalDs");
 
 
-        System.exit(1);
         Dataset<Row> msgTagDs = GyFintech.getMsgTagRdd(jsc, sc, hdfsHost, gySourcePath,"zz_tag_"+fileType+".csv").distinct();
    //     Dataset<Row> msgTagDs = GyFintech.getMsgTagRdd(jsc, sc, hdfsHost, gySourcePath,"singleTel_teg.csv").distinct();
         msgTagDs.registerTempTable("msgTag");
@@ -137,19 +113,14 @@ public class App {
 
             for (String lable:labels){
                 Dataset<Row> ds = GyFintech.derivedVarsByCondition(jsc, sc, hdfsHost, gySourcePath, telDs, day, applicationDt, 0, 24, lable);
-//                if (totalDs == null){
-//                    totalDs = telDs.join(ds,telDs.col("md5No").equalTo(ds.col("md5No")),"left_outer").drop(ds.col("md5No"));
-//                }else {
-//                    totalDs = totalDs.join(ds,totalDs.col("md5No").equalTo(telDs.col("md5No")),"left_outer").drop(ds.col("md5No"));
-//                }
-
-//                ds.show();
                 ds.repartition(1).write().option("header",true).csv(hdfsHost+"/result/DE/"+lable+"_"+day);
                 paths.add("/result/DE/"+lable+"_"+day);
             }
             sc.uncacheTable("sampleAll");
 
         }
+
+        GyFintech.mergeFile(paths,sc,hdfsHost+"/result/temp/");
 
 
 
@@ -169,6 +140,7 @@ public class App {
 
 
     }
+
 
 
 }
