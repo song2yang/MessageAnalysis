@@ -77,6 +77,36 @@ public class App {
         generalLabels.add("label_loan_apl");
         generalLabels.add("label_loan_apl_succ");
         generalLabels.add("label_loan_apl_fail");
+        generalLabels.add("label_loan_loan");
+        generalLabels.add("loan_amount");
+        generalLabels.add("label_loan_pay");
+        generalLabels.add("pay_amount");
+        generalLabels.add("label_loan_odue");
+        generalLabels.add("label_loan_ad");
+        generalLabels.add("label_loan_p2p");
+        generalLabels.add("label_loan_xd");
+        generalLabels.add("label_loan_xjfq");
+        generalLabels.add("label_loan_xffq");
+        generalLabels.add("label_loan_ccdh");
+        generalLabels.add("label_loan");
+        generalLabels.add("label_consume_hotel");
+        generalLabels.add("label_consume_tour");
+        generalLabels.add("label_consume_del");
+        generalLabels.add("label_consume_ad");
+        generalLabels.add("label_consume_order");
+        generalLabels.add("label_consume");
+        generalLabels.add("label_cc_buy");
+        generalLabels.add("label_cc_bill");
+        generalLabels.add("label_cc_ad");
+        generalLabels.add("cc_bill_amount");
+        generalLabels.add("label_cc");
+        generalLabels.add("label_consume_pay");
+        generalLabels.add("label_consume_payout");
+        generalLabels.add("payout_amount");
+        generalLabels.add("label_consume_payin");
+        generalLabels.add("payin_amount");
+        generalLabels.add("label_virtual");
+        generalLabels.add("label_invest");
 
         List<String> times = new ArrayList();
 //        times.add("0_6");
@@ -86,7 +116,6 @@ public class App {
 //        times.add("17_21");
 //        times.add("21_24");
         times.add("0_24");
-        List<VariableParam> params = new ArrayList<>();
 
         String applicationDt = "2018-7-1";
 
@@ -141,13 +170,13 @@ public class App {
 //            allSampleDs.repartition(1).write().option("header",true).csv("hdfs://10.0.1.95:9000/result/DE/"+day+"_allSampleDs");
                 sc.cacheTable("sampleAll");
 
-//                for (String label:amtLabels){
-//                    String tagLabel =  String.valueOf(day) + "_" + label + "_"+time;
-//                    Dataset<Row> ds = GyFintech.derivedAmtVars(sc, telDs, tagLabel, label);
-//                    ds = ds.dropDuplicates();
-//                    ds.repartition(1).write().option("header",true).csv(hdfsHost+"/result/DE/"+tagLabel);
-//                    paths.add(hdfsHost+"/result/DE/"+tagLabel);
-//                }
+                for (String label:amtLabels){
+                    String tagLabel =  String.valueOf(day) + "_" + label + "_"+time;
+                    Dataset<Row> ds = GyFintech.derivedAmtVars(sc, telDs, tagLabel, label);
+                    ds = ds.dropDuplicates();
+                    ds.repartition(1).write().option("header",true).csv(hdfsHost+"/result/DE/"+tagLabel);
+                    paths.add(hdfsHost+"/result/DE/"+tagLabel);
+                }
 
 
                 Dataset<Row> countDs = sc.sql("select count(*) as CNT,md5No1 as md5No from sampleAll " +
