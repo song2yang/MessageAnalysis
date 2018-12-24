@@ -80,7 +80,7 @@ public class App {
         generalLabels.add("label_loan_loan");
         generalLabels.add("loan_amount");
         generalLabels.add("label_loan_pay");
-        generalLabels.add("pay_amount");
+//        generalLabels.add("pay_amount");
         generalLabels.add("label_loan_odue");
         generalLabels.add("label_loan_ad");
         generalLabels.add("label_loan_p2p");
@@ -98,13 +98,13 @@ public class App {
         generalLabels.add("label_cc_buy");
         generalLabels.add("label_cc_bill");
         generalLabels.add("label_cc_ad");
-        generalLabels.add("cc_bill_amount");
+//        generalLabels.add("cc_bill_amount");
         generalLabels.add("label_cc");
         generalLabels.add("label_consume_pay");
         generalLabels.add("label_consume_payout");
-        generalLabels.add("payout_amount");
+//        generalLabels.add("payout_amount");
         generalLabels.add("label_consume_payin");
-        generalLabels.add("payin_amount");
+//        generalLabels.add("payin_amount");
         generalLabels.add("label_virtual");
         generalLabels.add("label_invest");
 
@@ -179,8 +179,7 @@ public class App {
                 }
 
 
-                Dataset<Row> countDs = sc.sql("select count(*) as CNT,md5No1 as md5No from sampleAll " +
-                        "where tagKey in ('loan_amount','pay_amount','cc_bill_amount','payout_amount','payin_amount') group by md5No1");
+                Dataset<Row> countDs = sc.sql("select count(*) as CNT,md5No1 as md5No from sampleAll group by md5No1");
                 for (String label:generalLabels) {
                     String tagLabel =  String.valueOf(day) + "_" + label + "_"+time;
                     Dataset<Row> ds = GyFintech.deriverdGeneralVars(sc, telDs, countDs, tagLabel, label);
