@@ -41,7 +41,9 @@ public class GyFintech {
         Dataset<Row> singleCntDs = sc.sql("select count(*) as " + tagLabel + "CNT,md5No1 from " + tagLabel + "sampleSingle group by md5No1");
 
 
-        singleCntDs.withColumn(tagLabel+"PER",singleCntDs.col(tagLabel + "CNT").divide(countDs.col("CNTT")));
+
+        singleCntDs = countDs.join(singleCntDs,singleCntDs.col("md5No1").equalTo(countDs.col("md5No1")))
+                .withColumn(tagLabel+"PER",singleCntDs.col(tagLabel + "CNT").divide(countDs.col("CNTT"))).drop(singleCntDs.col("md5No1"));
         totalDs = mergeDataSet(telDs,singleCntDs);
 
         return totalDs;
