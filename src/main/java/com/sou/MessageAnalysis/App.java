@@ -54,15 +54,15 @@ public class App {
 //        GyFintech.msgStatistics(jsc,sc,hdfsHost,gySourcePath,logger);
 
         List<Integer> days = new ArrayList();
-        days.add(7);
-        days.add(30);
-        days.add(60);
-        days.add(90);
-        days.add(120);
-        days.add(150);
-        days.add(180);
-        days.add(270);
-        days.add(360);
+//        days.add(7);
+//        days.add(30);
+//        days.add(60);
+//        days.add(90);
+//        days.add(120);
+//        days.add(150);
+//        days.add(180);
+//        days.add(270);
+//        days.add(360);
         days.add(720);
 
         List<String> amtLabels = new ArrayList();
@@ -79,13 +79,13 @@ public class App {
         generalLabels.add("label_loan_apl_fail");
 
         List<String> times = new ArrayList();
-        times.add("0_6");
-        times.add("6_11");
-        times.add("11_14");
-        times.add("14_17");
-        times.add("17_21");
-        times.add("21_24");
-
+//        times.add("0_6");
+//        times.add("6_11");
+//        times.add("11_14");
+//        times.add("14_17");
+//        times.add("17_21");
+//        times.add("21_24");
+        times.add("0_24");
         List<VariableParam> params = new ArrayList<>();
 
         String applicationDt = "2018-7-1";
@@ -149,9 +149,12 @@ public class App {
 //                    paths.add(hdfsHost+"/result/DE/"+tagLabel);
 //                }
 
+
+                Dataset<Row> countDs = sc.sql("select count(*) as CNT,md5No1 from sampleAll " +
+                        "where tagKey in ('loan_amount','pay_amount','cc_bill_amount','payout_amount','payin_amount') group by md5No1");
                 for (String label:generalLabels) {
                     String tagLabel =  String.valueOf(day) + "_" + label + "_"+time;
-                    Dataset<Row> ds = GyFintech.deriverdGeneralVars(sc, telDs, tagLabel, label);
+                    Dataset<Row> ds = GyFintech.deriverdGeneralVars(sc, telDs, countDs, tagLabel, label);
                     ds.repartition(1).write().option("header",true).csv(hdfsHost+"/result/DE/"+tagLabel);
                     paths.add(hdfsHost+"/result/DE/"+tagLabel);
                 }

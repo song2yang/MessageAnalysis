@@ -29,7 +29,7 @@ public class GyFintech {
         ds = null;
     }
 
-    public static Dataset<Row> deriverdGeneralVars(SQLContext sc,Dataset<Row> telDs,String tagLabel,String labelName){
+    public static Dataset<Row> deriverdGeneralVars(SQLContext sc,Dataset<Row> telDs,Dataset<Row> countDs,String tagLabel,String labelName){
 
         Dataset<Row> totalDs;
 
@@ -40,6 +40,8 @@ public class GyFintech {
 
         Dataset<Row> singleCntDs = sc.sql("select count(*) as " + tagLabel + "CNT,md5No1 from " + tagLabel + "sampleSingle group by md5No1");
 
+
+        singleCntDs.withColumn(tagLabel+"PER",singleCntDs.col(tagLabel + "CNT").divide(countDs.col("CNTT")));
         totalDs = mergeDataSet(telDs,singleCntDs);
 
         return totalDs;
