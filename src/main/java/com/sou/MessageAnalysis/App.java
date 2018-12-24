@@ -73,7 +73,10 @@ public class App {
         amtLabels.add("payin_amount");
 
         List<String> generalLabels = new ArrayList();
-        generalLabels.add("");
+        generalLabels.add("label_loan_reg");
+        generalLabels.add("label_loan_apl");
+        generalLabels.add("label_loan_apl_succ");
+        generalLabels.add("label_loan_apl_fail");
 
         List<String> times = new ArrayList();
         times.add("0_6");
@@ -149,6 +152,7 @@ public class App {
                 for (String label:generalLabels) {
                     String tagLabel =  String.valueOf(day) + "_" + label + "_"+time;
                     Dataset<Row> ds = GyFintech.deriverdGeneralVars(sc, telDs, tagLabel, label);
+                    ds.repartition(1).write().option("header",true).csv(hdfsHost+"/result/DE/"+tagLabel);
                     paths.add(hdfsHost+"/result/DE/"+tagLabel);
                 }
 
