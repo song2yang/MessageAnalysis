@@ -13,7 +13,7 @@ import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SQLContext;
 import util.HdfsUtil;
 
-import javax.swing.plaf.synth.SynthTextAreaUI;
+import javax.xml.crypto.Data;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
@@ -29,9 +29,24 @@ public class GyFintech {
         ds = null;
     }
 
-    public static Dataset<Row> derivedVarsByCondition(JavaSparkContext jsc, SQLContext sc, String hdfsHost, String sourcePath, Dataset<Row> telDs, Integer recentDays, String dt, Integer beginTm, Integer endTm, String labelName) {
+    public static Dataset<Row> deriverdGeneralVars(SQLContext sc,Dataset<Row> telDs,String tagLabel,String labelName){
 
-        String tagLabel = String.valueOf(recentDays) + "_" + labelName + "_";
+        Dataset<Row> totalDs;
+
+        //单标签短信
+        Dataset<Row> singleSampleDs = sc.sql("select sendTime,tagKey,tagVal,md5No1 from sampleAll where tagKey ='" + labelName +"'");
+        singleSampleDs.registerTempTable(tagLabel + "sampleSingle");
+        sc.cacheTable(tagLabel + "sampleSingle");
+
+        Dataset<Row> singleCntDs = sc.sql("select count(*) as " + tagLabel + "CNT,md5No1 from " + tagLabel + "sampleSingle group by md5No1");
+
+        totalDs = telDs.join(singleCntDs,telDs.col("md5No").equalTo(singleCntDs.col("md5No1"))).drop(singleCntDs.col("md5No1"));
+
+        return totalDs;
+    }
+
+    public static Dataset<Row> derivedAmtVars(SQLContext sc, Dataset<Row> telDs,String tagLabel, String labelName) {
+
         /**
          * 根据规则衍生变量
          */
@@ -39,8 +54,7 @@ public class GyFintech {
 
 
         //单标签短信
-        Dataset<Row> singleSampleDs = sc.sql("select sendTime,tagKey,tagVal,md5No1 from sampleAll" +
-                " where tagKey ='" + labelName + "' and hour(sendTime) between " + beginTm + " and " + endTm);
+        Dataset<Row> singleSampleDs = sc.sql("select sendTime,tagKey,tagVal,md5No1 from sampleAll where tagKey ='" + labelName +"'");
         singleSampleDs.registerTempTable(tagLabel + "sampleSingle");
         sc.cacheTable(tagLabel + "sampleSingle");
 //

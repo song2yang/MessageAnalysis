@@ -7,6 +7,7 @@ import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.sql.*;
+import org.apache.spark.sql.execution.columnar.INT;
 import util.HdfsUtil;
 import util.PropertiesUtil;
 
@@ -52,24 +53,35 @@ public class App {
 
 //        GyFintech.msgStatistics(jsc,sc,hdfsHost,gySourcePath,logger);
 
-        Integer[] days = new Integer[10];
-        days[0] = 7;
-        days[1] = 30;
-        days[2] = 60;
-        days[3] = 90;
-        days[4] = 120;
-        days[5] = 150;
-        days[6] = 180;
-        days[7] = 270;
-        days[8] = 360;
-        days[9] = 720;
+        List<Integer> days = new ArrayList();
+        days.add(7);
+        days.add(30);
+        days.add(60);
+        days.add(90);
+        days.add(120);
+        days.add(150);
+        days.add(180);
+        days.add(270);
+        days.add(360);
+        days.add(720);
 
-        String[] labels = new String[5];
-        labels[0] = "loan_amount";
-        labels[1] = "pay_amount";
-        labels[2] = "cc_bill_amount";
-        labels[3] = "payout_amount";
-        labels[4] = "payin_amount";
+        List<String> amtLabels = new ArrayList();
+        amtLabels.add("loan_amount");
+        amtLabels.add("pay_amount");
+        amtLabels.add("cc_bill_amount");
+        amtLabels.add("payout_amount");
+        amtLabels.add("payin_amount");
+
+        List<String> generalLabels = new ArrayList();
+        generalLabels.add("");
+
+        List<String> times = new ArrayList();
+        times.add("0_6");
+        times.add("6_11");
+        times.add("11_14");
+        times.add("14_17");
+        times.add("17_21");
+        times.add("21_24");
 
         List<VariableParam> params = new ArrayList<>();
 
@@ -113,20 +125,36 @@ public class App {
 
         for (Integer day:days) {
 
-            //全量短信
-            Dataset<Row> allSampleDs = sc.sql("select sendTime,tagKey,tagVal,md5No as md5No1" +
-                    ",datediff(to_date('"+applicationDt+"'),to_date(sendTime)) as dateDiff from sampleTagTemp where datediff(to_date('"+applicationDt+"'),to_date(sendTime)) between 0 and "+ day);
-            allSampleDs.registerTempTable("sampleAll");
-//            allSampleDs.repartition(1).write().option("header",true).csv("hdfs://10.0.1.95:9000/result/DE/"+day+"_allSampleDs");
-            sc.cacheTable("sampleAll");
+            for (String time:times){
+                String beginTm = time.split("_")[0];
+                String endTm = time.split("_")[1];
 
-            for (String lable:labels){
-                Dataset<Row> ds = GyFintech.derivedVarsByCondition(jsc, sc, hdfsHost, gySourcePath, telDs, day, applicationDt, 0, 24, lable);
-                ds = ds.dropDuplicates();
-                ds.repartition(1).write().option("header",true).csv(hdfsHost+"/result/DE/"+lable+"_"+day);
-                paths.add(hdfsHost+"/result/DE/"+lable+"_"+day);
+
+                //全量短信
+                Dataset<Row> allSampleDs = sc.sql("select sendTime,tagKey,tagVal,md5No as md5No1 " +
+                        "from sampleTagTemp where datediff(to_date('"+applicationDt+"'),to_date(sendTime)) between 0 and "+ day +
+                        " and hour(sendTime) between "+beginTm+" and "+endTm );
+                allSampleDs.registerTempTable("sampleAll");
+//            allSampleDs.repartition(1).write().option("header",true).csv("hdfs://10.0.1.95:9000/result/DE/"+day+"_allSampleDs");
+                sc.cacheTable("sampleAll");
+
+//                for (String label:amtLabels){
+//                    String tagLabel =  String.valueOf(day) + "_" + label + "_"+time;
+//                    Dataset<Row> ds = GyFintech.derivedAmtVars(sc, telDs, tagLabel, label);
+//                    ds = ds.dropDuplicates();
+//                    ds.repartition(1).write().option("header",true).csv(hdfsHost+"/result/DE/"+tagLabel);
+//                    paths.add(hdfsHost+"/result/DE/"+tagLabel);
+//                }
+
+                for (String label:generalLabels) {
+                    String tagLabel =  String.valueOf(day) + "_" + label + "_"+time;
+                    Dataset<Row> ds = GyFintech.deriverdGeneralVars(sc, telDs, tagLabel, label);
+                    paths.add(hdfsHost+"/result/DE/"+tagLabel);
+                }
+
+
+                sc.uncacheTable("sampleAll");
             }
-            sc.uncacheTable("sampleAll");
 
         }
 
