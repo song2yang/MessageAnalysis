@@ -42,8 +42,8 @@ public class GyFintech {
 
 
 
-        singleCntDs = countDs.join(singleCntDs,singleCntDs.col("md5No1").equalTo(countDs.col("md5No1")))
-                .withColumn(tagLabel+"PER",singleCntDs.col(tagLabel + "CNT").divide(countDs.col("CNTT"))).drop(singleCntDs.col("md5No1"));
+        singleCntDs = countDs.join(singleCntDs,singleCntDs.col("md5No1").equalTo(countDs.col("md5No")))
+                .withColumn(tagLabel+"PER",singleCntDs.col(tagLabel + "CNT").divide(countDs.col("CNT"))).drop(countDs.col("md5No")).drop(countDs.col("CNT"));
         totalDs = mergeDataSet(telDs,singleCntDs);
 
         return totalDs;

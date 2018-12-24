@@ -150,7 +150,7 @@ public class App {
 //                }
 
 
-                Dataset<Row> countDs = sc.sql("select count(*) as CNT,md5No1 from sampleAll " +
+                Dataset<Row> countDs = sc.sql("select count(*) as CNT,md5No1 as md5No from sampleAll " +
                         "where tagKey in ('loan_amount','pay_amount','cc_bill_amount','payout_amount','payin_amount') group by md5No1");
                 for (String label:generalLabels) {
                     String tagLabel =  String.valueOf(day) + "_" + label + "_"+time;
