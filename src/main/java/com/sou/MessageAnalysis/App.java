@@ -180,6 +180,7 @@ public class App {
 
 
                 Dataset<Row> countDs = sc.sql("select count(*) as CNT,md5No1 as md5No from sampleAll group by md5No1");
+                countDs.cache();
                 for (String label:generalLabels) {
                     String tagLabel =  String.valueOf(day) + "_" + label + "_"+time;
                     Dataset<Row> ds = GyFintech.deriverdGeneralVars(sc, telDs, countDs, tagLabel, label);
