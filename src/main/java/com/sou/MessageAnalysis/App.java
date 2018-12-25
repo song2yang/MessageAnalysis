@@ -42,7 +42,7 @@ public class App {
         gySourcePath = PropertiesUtil.getProperty("source.gy.path");
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] argsr) {
 
         SparkConf conf = new SparkConf().setAppName("MessageAnalyse").setMaster(sparkMaster).set("spark.sql.crossJoin.enabled","true");
 
@@ -78,7 +78,7 @@ public class App {
         generalLabels.add("label_loan_apl_succ");
         generalLabels.add("label_loan_apl_fail");
         generalLabels.add("label_loan_loan");
-        generalLabels.add("loan_amount");
+//        generalLabels.add("loan_amount");
         generalLabels.add("label_loan_pay");
 //        generalLabels.add("pay_amount");
         generalLabels.add("label_loan_odue");

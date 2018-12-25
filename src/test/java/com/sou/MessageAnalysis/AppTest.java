@@ -1,6 +1,7 @@
 package com.sou.MessageAnalysis;
 
 import com.sou.MessageAnalysis.bean.MessageRule;
+import com.sou.MessageAnalysis.company.GyFintech;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
@@ -13,6 +14,7 @@ import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SQLContext;
 import util.HdfsUtil;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -33,17 +35,18 @@ public class AppTest
 
 
             List<String> paths = new ArrayList<>();
-            paths.add("/result/DE/cc_bill_amount_360");
-            paths.add("/Users/souyouyou/Desktop/cloud/DE/cc_bill_amount_7");
-            paths.add("/Users/souyouyou/Desktop/cloud/DE/loan_amount_360");
-            paths.add("/Users/souyouyou/Desktop/cloud/DE/loan_amount_7");
-            paths.add("/Users/souyouyou/Desktop/cloud/DE/pay_amount_360");
-            paths.add("/Users/souyouyou/Desktop/cloud/DE/pay_amount_7");
-            paths.add("/Users/souyouyou/Desktop/cloud/DE/payin_amount_360");
-            paths.add("/Users/souyouyou/Desktop/cloud/DE/payin_amount_7");
-            paths.add("/Users/souyouyou/Desktop/cloud/DE/payout_amount_360");
-//            paths.add("/Users/souyouyou/Desktop/cloud/DE/payout_amount_7");
-//            System.out.println("FINAL"+mergeFile(paths,sc));;
+            paths.add("/result/DE/totalDs");
+            paths.add("/result/DE/totalDs1");
+
+            Dataset<Row> telDs = GyFintech.getTelRdd(jsc, sc, hdfsHost, "/data/gy/","CJM_1129_DE.txt").distinct();
+
+            File file = new File("/Users/souyouyou/Desktop/cloud/totalDs1");
+            if (file.isDirectory()){
+                File[] files = file.listFiles();
+                for (File file1:files){
+                    System.out.println(file1.getAbsoluteFile());
+                }
+            }
         }
 
 

@@ -46,6 +46,9 @@ public class GyFintech {
                 .withColumn(tagLabel+"PER",singleCntDs.col(tagLabel + "CNT").divide(countDs.col("CNT"))).drop(countDs.col("md5No")).drop(countDs.col("CNT"));
         totalDs = mergeDataSet(telDs,singleCntDs);
 
+
+        sc.uncacheTable(tagLabel + "sampleSingle");
+
         return totalDs;
     }
 
@@ -194,7 +197,7 @@ public class GyFintech {
 
             return mergeFile(newPaths, sc, tempFilePath);
         } else if (paths.size() == 1) {
-            sc.sparkSession().read().option("header", true).csv(paths.get(0)).write().option("header", true).csv("hdfs://10.0.1.95:9000/result/DE/totalDs");
+            sc.sparkSession().read().option("header", true).csv(paths.get(0)).repartition(1).write().option("header", true).csv("hdfs://10.0.1.95:9000/result/DE/totalDs");
             return paths.get(0);
         } else {
             newPaths = new ArrayList<>();
