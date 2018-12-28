@@ -34,7 +34,7 @@ public class GyFintech {
         Dataset<Row> totalDs;
 
         //单标签短信
-        Dataset<Row> singleSampleDs = sc.sql("select sendTime,tagKey,tagVal,md5No1 from sampleAll where tagKey ='" + labelName +"'");
+        Dataset<Row> singleSampleDs = sc.sql("select sendTime,tagKey,tagVal,md5No1,applicationDt from sampleAll where tagKey ='" + labelName +"'");
         singleSampleDs.registerTempTable(tagLabel + "sampleSingle");
         sc.cacheTable(tagLabel + "sampleSingle");
 
@@ -61,7 +61,7 @@ public class GyFintech {
 
 
         //单标签短信
-        Dataset<Row> singleSampleDs = sc.sql("select sendTime,tagKey,tagVal,md5No1 from sampleAll where tagKey ='" + labelName +"'");
+        Dataset<Row> singleSampleDs = sc.sql("select sendTime,tagKey,tagVal,md5No1,applicationDt from sampleAll where tagKey ='" + labelName +"'");
         singleSampleDs.registerTempTable(tagLabel + "sampleSingle");
         sc.cacheTable(tagLabel + "sampleSingle");
 //
@@ -102,8 +102,8 @@ public class GyFintech {
                 "min(tagVal) as " + tagLabel + "MIN," +
                 "avg(tagVal) as " + tagLabel + "AVG," +
                 "variance(tagVal) as " + tagLabel + "VAR," +
-                "kurtosis(tagVal) as " + tagLabel + "KURT," +
-                "skewness(tagVal) as " + tagLabel + "SKEW," +
+                "nanvl(kurtosis(tagVal),0)as " + tagLabel + "KURT," +
+                "nanvl(skewness(tagVal),0) as " + tagLabel + "SKEW," +
                 "percentile(tagVal,0.25) as " + tagLabel + "25Q," +
                 "percentile(tagVal,0.5) as " + tagLabel + "MED," +
                 "percentile(tagVal,0.75) as " + tagLabel + "75Q," +
@@ -117,6 +117,10 @@ public class GyFintech {
         totalDs = mergeDataSet(totalDs, sc.sql("select md5No1,count(tagVal) as " + tagLabel + "5000CNT from " + tagLabel + "sampleSingle where tagVal > 5000 group by md5No1"));
         totalDs = mergeDataSet(totalDs, sc.sql("select md5No1,count(tagVal) as " + tagLabel + "10000CNT from " + tagLabel + "sampleSingle where tagVal > 10000 group by md5No1"));
         totalDs = mergeDataSet(totalDs, sc.sql("select md5No1,count(tagVal) as " + tagLabel + "50000CNT from " + tagLabel + "sampleSingle  where tagVal > 50000 group by md5No1"));
+        totalDs = mergeDataSet(totalDs, sc.sql("select md5No1,datediff(to_date(first(applicationDt)),to_date(max(sendTime))) as "+ tagLabel +"later," +
+                "datediff(to_date(min(sendTime)),to_date(first(applicationDt))) as "+ tagLabel +"earlier," +
+                "datediff(to_date( max(sendTime)),to_date( min(sendTime))) as "+ tagLabel +"longest ," +
+                " count(*)/datediff(to_date( max(sendTime)),to_date( min(sendTime))) as "+ tagLabel +"freq from "+tagLabel+"sampleSingle group by md5No1"));
 //        /* 500DAYS	金额大于500元的天数 */
 //        Dataset<Row> days500Ds = amtDayCountsGreaterThan(sc,Double.valueOf(500),tagLabel+"500DAYS",tagLabel);
 //        totalDs = mergeDataSet(totalDs,days500Ds);

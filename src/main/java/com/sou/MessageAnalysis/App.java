@@ -21,7 +21,7 @@ import java.util.List;
 public class App {
     private static Logger logger = Logger.getLogger(App.class);
 
-    private static String profile = "pro";
+    private static String profile = "dev";
     private static final String fileType = "DE";
     private static String sparkMaster;
     private static String hdfsHost;
@@ -51,6 +51,13 @@ public class App {
         SQLContext sc = new SQLContext(jsc);
 
 
+//        Dataset<Row> ds1 = sc.sparkSession().read().option("header", true).csv("hdfs://10.0.1.95:9000/result/DE/totalDs");
+//        Dataset<Row> ds2 = sc.sparkSession().read().option("header", true).csv("hdfs://10.0.1.95:9000/result/DE/totalDs1");
+//
+//        ds1.join(ds2,ds1.col("md5No").equalTo(ds2.col("md5No"))).drop(ds1.col("md5No")).drop(ds1.col("originalNo")).repartition(1).write().option("header",true).csv("hdfs://10.0.1.95:9000/result/DE/result");
+//
+//
+//        System.exit(1);
 //        GyFintech.msgStatistics(jsc,sc,hdfsHost,gySourcePath,logger);
 
         List<Integer> days = new ArrayList();
@@ -117,12 +124,12 @@ public class App {
 //        times.add("21_24");
         times.add("0_24");
 
-        String applicationDt = "2018-7-1";
 
 
         //样本手机号码md5文件（15873222574     BA1674B46C363EFFD6D8B0153699F164）
         // 大额 CJM_1129_DE 小额 CJM_1129_XE
-        Dataset<Row> telDs = GyFintech.getTelRdd(jsc, sc, hdfsHost, gySourcePath,"CJM_1129_"+fileType+".txt").distinct();
+//        Dataset<Row> telDs = GyFintech.getTelRdd(jsc, sc, hdfsHost, gySourcePath,"CJM_1129_"+fileType+".txt").distinct();
+        Dataset<Row> telDs = GyFintech.getTelRdd(jsc, sc, hdfsHost, gySourcePath,"CJM_1129_"+fileType+"_test.txt").distinct();
 //        Dataset<Row> telDs = GyFintech.getTelRdd(jsc, sc, hdfsHost, gySourcePath,"CJM_1129_DE_single.txt").distinct();
 //        telDs = telDs.drop(telDs.col("originalNo"));
 
@@ -131,7 +138,8 @@ public class App {
 
         //样本原始文件（15961768685,2018/8/7,0）
         // 大额 YB_DE 小额 YB_XE
-        Dataset<Row> sampleDs = GyFintech.getSampleRdd(jsc, sc, hdfsHost, gySourcePath, "YB_"+fileType+".csv").distinct();
+        Dataset<Row> sampleDs = GyFintech.getSampleRdd(jsc, sc, hdfsHost, gySourcePath, "YB_"+fileType+"_test.csv").distinct();
+//        Dataset<Row> sampleDs = GyFintech.getSampleRdd(jsc, sc, hdfsHost, gySourcePath, "YB_"+fileType+".csv").distinct();
 
         Dataset<Row> sampleTelDs = sampleDs.join(telDs, sampleDs.col("mobile").equalTo(telDs.col("originalNo"))).distinct();
         sampleTelDs = sampleTelDs.drop(sampleTelDs.col("originalNo")).drop(sampleTelDs.col("mobile"));
@@ -140,7 +148,8 @@ public class App {
         List<String> paths = new ArrayList<>();
 
 
-        Dataset<Row> msgTagDs = GyFintech.getMsgTagRdd(jsc, sc, hdfsHost, gySourcePath,"zz_tag_"+fileType+".csv");
+        Dataset<Row> msgTagDs = GyFintech.getMsgTagRdd(jsc, sc, hdfsHost, gySourcePath,"zz_tag_"+fileType+"_test.csv");
+//        Dataset<Row> msgTagDs = GyFintech.getMsgTagRdd(jsc, sc, hdfsHost, gySourcePath,"zz_tag_"+fileType+".csv");
    //     Dataset<Row> msgTagDs = GyFintech.getMsgTagRdd(jsc, sc, hdfsHost, gySourcePath,"singleTel_teg.csv").distinct();
         msgTagDs.registerTempTable("msgTag");
 
@@ -149,6 +158,9 @@ public class App {
         Dataset<Row> sampleTagDs = sampleTelDs.join(msgTagDs, msgTagDs.col("telMd5").equalTo(sampleTelDs.col("md5No")));
         sampleTagDs.registerTempTable("sampleTagTemp");
 
+
+        sampleTagDs.repartition(1).write().option("header",true).csv("hdfs://10.0.1.95:9000/data/gy/tag.csv");
+        System.exit(1);
         sc.cacheTable("sampleTagTemp");
 
         sampleTagDs.cache();
@@ -163,30 +175,30 @@ public class App {
 
 
                 //全量短信
-                Dataset<Row> allSampleDs = sc.sql("select sendTime,tagKey,tagVal,md5No as md5No1 " +
-                        "from sampleTagTemp where datediff(to_date('"+applicationDt+"'),to_date(sendTime)) between 0 and "+ day +
+                Dataset<Row> allSampleDs = sc.sql("select sendTime,tagKey,tagVal,md5No as md5No1,applicationDt " +
+                        "from sampleTagTemp where datediff(to_date(applicationDt),to_date(sendTime)) between 0 and "+ day +
                         " and hour(sendTime) between "+beginTm+" and "+endTm );
                 allSampleDs.registerTempTable("sampleAll");
 //            allSampleDs.repartition(1).write().option("header",true).csv("hdfs://10.0.1.95:9000/result/DE/"+day+"_allSampleDs");
                 sc.cacheTable("sampleAll");
 
                 for (String label:amtLabels){
-                    String tagLabel =  String.valueOf(day) + "_" + label + "_"+time;
+                    String tagLabel =  label + "_"+String.valueOf(day) + "_" + time + "_";
                     Dataset<Row> ds = GyFintech.derivedAmtVars(sc, telDs, tagLabel, label);
                     ds = ds.dropDuplicates();
                     ds.repartition(1).write().option("header",true).csv(hdfsHost+"/result/DE/"+tagLabel);
                     paths.add(hdfsHost+"/result/DE/"+tagLabel);
                 }
 
-
-                Dataset<Row> countDs = sc.sql("select count(*) as CNT,md5No1 as md5No from sampleAll group by md5No1");
-                countDs.cache();
-                for (String label:generalLabels) {
-                    String tagLabel =  String.valueOf(day) + "_" + label + "_"+time;
-                    Dataset<Row> ds = GyFintech.deriverdGeneralVars(sc, telDs, countDs, tagLabel, label);
-                    ds.repartition(1).write().option("header",true).csv(hdfsHost+"/result/DE/"+tagLabel);
-                    paths.add(hdfsHost+"/result/DE/"+tagLabel);
-                }
+//
+//                Dataset<Row> countDs = sc.sql("select count(*) as CNT,md5No1 as md5No from sampleAll group by md5No1");
+//                countDs.cache();
+//                for (String label:generalLabels) {
+//                    String tagLabel =  label + "_"+String.valueOf(day) + "_" + time + "_";
+//                    Dataset<Row> ds = GyFintech.deriverdGeneralVars(sc, telDs, countDs, tagLabel, label);
+//                    ds.repartition(1).write().option("header",true).csv(hdfsHost+"/result/DE/"+tagLabel);
+//                    paths.add(hdfsHost+"/result/DE/"+tagLabel);
+//                }
 
 
                 sc.uncacheTable("sampleAll");

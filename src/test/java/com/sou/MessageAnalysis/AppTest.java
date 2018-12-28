@@ -34,19 +34,27 @@ public class AppTest
             SQLContext sc = new SQLContext(jsc);
 
 
-            List<String> paths = new ArrayList<>();
-            paths.add("/result/DE/totalDs");
-            paths.add("/result/DE/totalDs1");
+//            Dataset<Row> ds1 = sc.sparkSession().read().option("header", true).csv("/Users/souyouyou/Documents/totalDs.csv");
+//            Dataset<Row> ds2 = sc.sparkSession().read().option("header", true).csv("/Users/souyouyou/Documents/totalDs1.csv");
 
-            Dataset<Row> telDs = GyFintech.getTelRdd(jsc, sc, hdfsHost, "/data/gy/","CJM_1129_DE.txt").distinct();
 
-            File file = new File("/Users/souyouyou/Desktop/cloud/totalDs1");
-            if (file.isDirectory()){
-                File[] files = file.listFiles();
-                for (File file1:files){
-                    System.out.println(file1.getAbsoluteFile());
-                }
-            }
+            Dataset<Row> ds1 = GyFintech.getTelRdd(jsc, sc, hdfsHost, "/data/gy/", "CJM_1129_DE_test.txt");
+            Dataset<Row> ds2 = GyFintech.getSampleRdd(jsc, sc, hdfsHost, "/data/gy/", "YB_DE_test.csv");
+            Dataset<Row> ds3 = ds1.join(ds2, ds1.col("originalNo").equalTo(ds2.col("mobile"))).drop(ds1.col("originalNo")).drop(ds2.col("mobile"));
+
+            Dataset<Row> msgDs = GyFintech.getMsgTagRdd(jsc, sc, hdfsHost, "/data/gy/", "zz_tag_DE_test.csv");
+            System.out.println(msgDs.count());
+
+            Dataset<Row> ds4 = ds3.join(msgDs, ds3.col("md5No").equalTo(msgDs.col("telMd5"))).drop(ds3.col("md5No"));
+//            ds4.repartition(1).write().option("header",true).csv("/Users/souyouyou/Desktop/cloud/sample");
+
+            ds4.registerTempTable("sample");
+
+            sc.sql("select datediff(to_date(first(applicationDt)),to_date(max(sendTime))) as later," +
+                    "datediff(to_date(min(sendTime)),to_date(first(applicationDt))) as earlier," +
+                    "datediff(to_date( max(sendTime)),to_date( min(sendTime))) as longest , count(*)/datediff(to_date( max(sendTime)),to_date( min(sendTime))) as freq " +
+                    "from sample group by telMd5").show();
+
         }
 
 
