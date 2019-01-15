@@ -2,6 +2,8 @@ package com.sou.MessageAnalysis;
 
 import org.junit.Test;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -10,12 +12,10 @@ import java.util.Map;
 public class Messagetest {
 
 	@Test
-	public void test1() {
-		Map<String, Map> rules = new HashMap<>();
-		Map list1 = new HashMap();
-		Map list2 = new HashMap();
-		rules.put("1",list1);
-		rules.put("1",list2);
-		System.out.println(111);
+	public void test1() throws ParseException {
+		String dateStr = "2017-1-1 12:24:07";
+		SimpleDateFormat sdf2 = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+		String sendTime = sdf2.format(sdf2.parse(dateStr));
+		System.out.println(sendTime);
 	}
 }

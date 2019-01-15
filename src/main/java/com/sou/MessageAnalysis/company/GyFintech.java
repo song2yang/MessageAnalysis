@@ -48,11 +48,12 @@ public class GyFintech {
 
 
         sc.uncacheTable(tagLabel + "sampleSingle");
+        totalDs = totalDs.na().fill(0);
 
         return totalDs;
     }
 
-    public static Dataset<Row> derivedAmtVars(SQLContext sc, Dataset<Row> telDs,String tagLabel, String labelName) {
+    public static Dataset<Row> derivedAmtVars(SQLContext sc, Dataset<Row> telDs,Dataset<Row> countDs, String tagLabel, String labelName) {
 
         /**
          * 根据规则衍生变量
@@ -183,43 +184,96 @@ public class GyFintech {
 
     }
 
-    public static String mergeFile(List<String> paths, SQLContext sc, String tempFilePath) {
+    public static String mergeFile(List<String> paths, SQLContext sc, String tempFilePath,Dataset<Row> sampleDs) {
 
         List<String> newPaths;
 
         if (paths.size() % 2 == 0) {
             newPaths = new ArrayList<>();
             for (int i = 0; i < paths.size(); i = i + 2) {
+                String tempFilename = String.valueOf(System.currentTimeMillis());
+
                 Dataset<Row> ds1 = sc.sparkSession().read().option("header", true).csv(paths.get(i));
                 Dataset<Row> ds2 = sc.sparkSession().read().option("header", true).csv(paths.get(i + 1));
-                ds2 = ds2.drop(ds2.col("originalNo"));
-                String tempFilename = String.valueOf(System.currentTimeMillis());
-                ds1.join(ds2, ds1.col("md5No").equalTo(ds2.col("md5No")), "left_outer").drop(ds2.col("md5No"))
-                        .repartition(1).write().option("header", true).csv(tempFilePath + tempFilename);
-                newPaths.add(tempFilePath + tempFilename);
+                ds2 = ds2.dropDuplicates();
+                ds1 = ds1.dropDuplicates();
+                Long ds1Count = ds1.count();
+                Long ds2Count = ds2.count();
+                try {
+                    if (ds1Count == 0 && ds2Count == 0){
+                        continue;
+                    }else if (ds1Count == 0){
+                        ds2.repartition(1).write().option("header",true).csv(tempFilePath+tempFilename);
+                        newPaths.add(tempFilePath+tempFilename);
+                    }else if (ds2Count == 0){
+                        ds1.repartition(1).write().option("header",true).csv(tempFilePath+tempFilename);
+                        newPaths.add(tempFilePath+tempFilename);
+                    }else {
+                        ds2 = ds2.drop(ds2.col("originalNo"));
+                        ds1.join(ds2, ds1.col("md5No").equalTo(ds2.col("md5No")), "left_outer").drop(ds2.col("md5No"))
+                                .repartition(1).write().option("header", true).csv(tempFilePath + tempFilename);
+                        newPaths.add(tempFilePath + tempFilename);
+                    }
+                }catch (Exception e){
+                    System.out.println(paths.get(i)+","+paths.get(i+1));
+                    System.out.println(e.getMessage());
+                }
+
+
             }
 
-            return mergeFile(newPaths, sc, tempFilePath);
+            return mergeFile(newPaths, sc, tempFilePath,sampleDs);
         } else if (paths.size() == 1) {
-            sc.sparkSession().read().option("header", true).csv(paths.get(0)).repartition(1).write().option("header", true).csv("hdfs://10.0.1.95:9000/result/DE/totalDs");
+            Dataset<Row> ds = sc.sparkSession().read().option("header", true).csv(paths.get(0));
+            ds = ds.na().fill("0");
+            try {
+                ds = ds.join(sampleDs, ds.col("originalNo").equalTo(sampleDs.col("mobile"))).drop(sampleDs.col("mobile")).drop(sampleDs.col("applicationDt"));
+                ds.repartition(1).write().option("header", true).csv("hdfs://10.0.1.95:9000/result/"+fileType+"/totalDs");
+            }catch (Exception e){
+                System.out.println(paths.get(0));
+                System.out.println(e.getMessage());
+            }
+
             return paths.get(0);
         } else {
             newPaths = new ArrayList<>();
             for (int i = 0; i < paths.size() - 1; i = i + 2) {
+                String tempFilename = String.valueOf(System.currentTimeMillis());
+
                 Dataset<Row> ds1 = sc.sparkSession().read().option("header", true).csv(paths.get(i));
                 Dataset<Row> ds2 = sc.sparkSession().read().option("header", true).csv(paths.get(i + 1));
-                ds2 = ds2.drop(ds2.col("originalNo"));
-                String tempFilename = String.valueOf(System.currentTimeMillis());
-                ds1.join(ds2, ds1.col("md5No").equalTo(ds2.col("md5No")), "left_outer").drop(ds2.col("md5No"))
-                        .repartition(1).write().option("header", true).csv(tempFilePath + tempFilename);
-                newPaths.add(tempFilePath + tempFilename);
 
-                if (i + 3 == paths.size()) {
-                    newPaths.add(paths.get(paths.size() - 1));
+                Long ds1Count = ds1.count();
+                Long ds2Count = ds2.count();
+                ds1 = ds1.dropDuplicates();
+                ds2 = ds2.dropDuplicates();
+
+                try {
+                    if (ds1Count == 0 && ds2Count == 0){
+                        continue;
+                    }else if (ds1Count == 0){
+                        ds2.repartition(1).write().option("header",true).csv(tempFilePath+tempFilename);
+                        newPaths.add(tempFilePath+tempFilename);
+                    }else if (ds2Count == 0){
+                        ds1.repartition(1).write().option("header",true).csv(tempFilePath+tempFilename);
+                        newPaths.add(tempFilePath+tempFilename);
+                    }else {
+                        ds2 = ds2.drop(ds2.col("originalNo"));
+                        ds1.join(ds2, ds1.col("md5No").equalTo(ds2.col("md5No")), "left_outer").drop(ds2.col("md5No"))
+                                .repartition(1).write().option("header", true).csv(tempFilePath + tempFilename);
+                        newPaths.add(tempFilePath + tempFilename);
+                    }
+                    if (i + 3 == paths.size()) {
+                        newPaths.add(paths.get(paths.size() - 1));
+                    }
+                }catch (Exception e){
+                    System.out.println(e.getMessage());
+                    System.out.println(paths.get(i)+",,"+paths.get(i+1));
                 }
+
             }
 
-            return mergeFile(newPaths, sc, tempFilePath);
+            return mergeFile(newPaths, sc, tempFilePath,sampleDs);
         }
 
 
@@ -451,21 +505,24 @@ public class GyFintech {
                 messageTag.setTagKey(msgTagInfo[5].replaceAll("\"", ""));
                 try {
                     messageTag.setTagVal(Double.valueOf(msgTagInfo[6].replaceAll("\"", "")));
+                    SimpleDateFormat sdf1 = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
+                    SimpleDateFormat sdf2 = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+
+                    String sendTime = sdf2.format(sdf2.parse(msgTagInfo[11].replaceAll("\"", "")));
+
+                    messageTag.setSendTime(sendTime);
                 } catch (Exception e) {
                     messageTag.setTagVal(0.0);
 //                    System.out.println(e.getMessage());
 //                    System.out.println(msgTag);
+
                 }
 //                messageTag.setYear(msgTagInfo[7].replaceAll("\"",""));
 //                messageTag.setMonth(msgTagInfo[8].replaceAll("\"",""));
 //                messageTag.setDt(msgTagInfo[9].replaceAll("\"",""));
 //                messageTag.setCreateTime(msgTagInfo[10].replaceAll("\"",""));
 
-                SimpleDateFormat sdf1 = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
-                SimpleDateFormat sdf2 = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-                String sendTime = sdf2.format(sdf1.parse(msgTagInfo[11].replaceAll("\"", "")));
 
-                messageTag.setSendTime(sendTime);
 //                    messageTag.setMsgId(msgTagInfo[12].replaceAll("\"",""));
 
                 return messageTag;
@@ -501,7 +558,12 @@ public class GyFintech {
                 SimpleDateFormat sdf2 = new SimpleDateFormat("yyyy-MM-dd");
                 sample.setMobile(sampleArr[0]);
                 try {
-                    sample.setApplicationDt(sdf2.format(sdf1.parse(sampleArr[1])));
+                    if(!sampleArr[1].equals("NULL")){
+                        sample.setApplicationDt(sdf2.format(sdf1.parse(sampleArr[1])));
+                    }else {
+                        sample.setApplicationDt("");
+                    }
+
                 } catch (Exception e) {
                     sample.setApplicationDt("1960-01-01");
                     e.printStackTrace();
